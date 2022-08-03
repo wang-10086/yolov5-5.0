@@ -18,7 +18,7 @@ from utils.general import xyxy2xywh
 
 global model
 
-# test
+
 class MyMainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self, parent=None):
         global model
