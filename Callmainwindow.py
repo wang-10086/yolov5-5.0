@@ -17,11 +17,14 @@ from utils.plots import plot_one_box, plot_one_box_new
 from utils.general import xyxy2xywh
 
 global model
+global video_quit
 
 
 class MyMainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self, parent=None):
         global model
+        global video_quit
+        video_quit = 0
         weights = './runs/train/exp/weights/best.pt'
         device = '0'
 
@@ -30,6 +33,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         self.setupUi(self)
         self.pushButton.clicked.connect(self.img_detect)
         self.pushButton_2.clicked.connect(self.video_detect)
+        self.pushButton_3.clicked.connect(self.video_quit)
         self.actionSettings.triggered.connect(lambda: self.opensettings())
         self.settings = QWidget()
         self.ui2 = Ui_Form()
@@ -126,8 +130,8 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         """
 
         global model
+        global video_quit
 
-        roi = self.actionIs_ROI.isChecked()
         x1 = 400
         x2 = 1400
         y1 = 600
@@ -147,6 +151,13 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
             # 视频检测
             num = 0  # 用于检测计数
             while True:
+                # 视频检测退出功能
+                if video_quit:
+                    video_quit = 0
+                    print('退出')
+                    break
+
+                roi = self.actionIs_ROI.isChecked()  # 是否进行ROI截取
                 conf_thres = self.doubleSpinBox_3.value()   # 置信度阈值
                 iou_thres = self.doubleSpinBox_4.value()    # IOU阈值
                 fps = self.spinBox.value()  # 期望输出帧率
@@ -228,6 +239,11 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         # ui2 = Ui_SettingsWindow()
         # ui2.setupUi(settings)
         self.settings.show()
+
+    # 这是视频检测退出按钮槽函数--->pushbutton3
+    def video_quit(self):
+        global video_quit
+        video_quit = 1
 
 
 class SettingsWindow(QWidget, Ui_Form):

@@ -267,7 +267,7 @@
      <widget class="QPushButton" name="pushButton_2">
       <property name="geometry">
        <rect>
-        <x>840</x>
+        <x>790</x>
         <y>430</y>
         <width>93</width>
         <height>28</height>
@@ -460,6 +460,19 @@
         </widget>
        </item>
       </layout>
+     </widget>
+     <widget class="QPushButton" name="pushButton_3">
+      <property name="geometry">
+       <rect>
+        <x>920</x>
+        <y>430</y>
+        <width>93</width>
+        <height>28</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>退出检测</string>
+      </property>
      </widget>
     </widget>
     <widget class="QWidget" name="tab_3">
