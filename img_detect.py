@@ -13,6 +13,7 @@ from utils.torch_utils import select_device, load_classifier, time_synchronized
 
 
 def img_detect(model, source, roi=0, roi_range=[0, 0, 0, 0], imgsz=640, device='0', conf_thres=0.5, iou_thres=0.45, classes=None, agnostic_nms=False, augment=True):
+    # ROI截取区域坐标
     x1 = roi_range[0]
     x2 = roi_range[1]
     y1 = roi_range[2]

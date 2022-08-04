@@ -171,7 +171,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
                     print('读取当前帧失败')
                     break
 
-                # 进入路口区域处理
+                # 进入路口区域增加注意力集中机制
                 if 85 < num + 1 < 180:
                     print('已进入路口区域')
                     roi = 1     # 进入路口后强制进行ROI截取
