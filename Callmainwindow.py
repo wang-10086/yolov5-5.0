@@ -57,12 +57,13 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
 
         source = 'C:/Users/17262/Desktop/test.jpg'  # 检测图片的路径
         roi = self.actionIs_ROI.isChecked()  # 是否进行ROI截取
-        conf_thres = self.doubleSpinBox.value()     # 置信度阈值
-        iou_thres = self.doubleSpinBox_2.value()        # IOU阈值
+        conf_thres = self.doubleSpinBox.value()  # 置信度阈值
+        iou_thres = self.doubleSpinBox_2.value()  # IOU阈值
         x1 = 400  # ROI左上角横坐标
         x2 = 1400  # ROI右下角横坐标
         y1 = 600  # ROI左上角纵坐标
         y2 = 1040  # ROI右下角纵坐标
+        roi_range = [x1, x2, y1, y2]
 
         original_img = cv2.imread(source)
 
@@ -75,7 +76,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         t0 = time.time()  # 开始检测,并计时
         # 调用图片检测函数img_detect()进行检测，result[0]存储检测结果，是np.ndarray类型;result[1]存储检测种类和置信度，是一个字符串数组;
         # det存储检测结果的各项信息，包括检测框位置
-        result = img_detect(model=model, source=source, roi=roi, conf_thres=conf_thres, iou_thres=iou_thres)
+        result = img_detect(model=model, source=source, roi=roi, roi_range=roi_range, conf_thres=conf_thres, iou_thres=iou_thres)
 
         # 绘图部分
         if roi:
@@ -158,15 +159,30 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
                     break
 
                 roi = self.actionIs_ROI.isChecked()  # 是否进行ROI截取
-                conf_thres = self.doubleSpinBox_3.value()   # 置信度阈值
-                iou_thres = self.doubleSpinBox_4.value()    # IOU阈值
+                roi_range = [x1, x2, y1, y2]
+                conf_thres = self.doubleSpinBox_3.value()  # 置信度阈值
+                iou_thres = self.doubleSpinBox_4.value()  # IOU阈值
                 fps = self.spinBox.value()  # 期望输出帧率
                 detect_frequency = self.spinBox_2.value()  # 检测频率，即每detect_frequency帧检测一次
+
                 t0 = time.time()  # 开始检测的时间
                 ref, frame = capture.read()  # 读取当前帧
                 if not ref:
                     print('读取当前帧失败')
                     break
+
+                # 进入路口区域处理
+                if 85 < num + 1 < 180:
+                    print('已进入路口区域')
+                    roi = 1     # 进入路口后强制进行ROI截取
+                    roi_range = [300, 1500, 300, 1000]      # 路口ROI截取范围,区别于正常ROI截取范围
+
+                if roi:
+                    offset = [roi_range[0], roi_range[2]]
+                    leftup_point = [roi_range[0], roi_range[2]]     # ROI截取区域左上角点坐标
+                    rightdown_point = [roi_range[1], roi_range[3]]  # ROI截取区域右下角点坐标
+                else:
+                    offset = [0, 0]
 
                 cv2.imwrite('original_img.jpg', frame)  # 将当前帧暂存为jpg图像
                 original_img = cv2.imread('original_img.jpg')
@@ -175,15 +191,13 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
                 # 进行检测，每隔detect_frequency帧进行一次检测
                 if num % detect_frequency == 0:
                     # 检测部分
-                    results = img_detect(model=model, source='original_img.jpg', roi=roi, conf_thres=conf_thres, iou_thres=iou_thres)
+                    results = img_detect(model=model, source='original_img.jpg', roi=roi, roi_range=roi_range,
+                                         conf_thres=conf_thres, iou_thres=iou_thres)
 
                     # 绘图部分
                     if roi:
-                        offset = [x1, y1]  # 如果进行ROI，则最终返回坐标需要经过一定偏置，即映射到原图上才能进行绘图
-                        cv2.rectangle(original_img, [x1, y1], [x2, y2], color=[0, 0, 255], thickness=tl,
+                        cv2.rectangle(original_img, leftup_point, rightdown_point, color=[0, 0, 255], thickness=tl,
                                       lineType=cv2.LINE_AA)
-                    else:
-                        offset = [0, 0]
                     gn = torch.tensor(results[0].shape)[[1, 0, 1, 0]]  # normalization gain whwh
                     for *xyxy, conf, cls in reversed(results[2]):
                         # 标准化检测框信息，xywh分别代表检测框的中心点坐标和宽高，宽高均是绝对长度除以图片宽高的结果
@@ -216,7 +230,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
                 while time.time() - t0 < 1 / fps:
                     time.sleep(0.0001)
                 t1 = time.time()
-                print('单帧检测用时：%.4fs' % (t1 - t0))
+                print('第%d帧检测用时：%.4fs' % (num, t1 - t0))
 
                 # 退出功能
                 c = cv2.waitKey(0) & 0xff  # 判断按下按键

@@ -12,11 +12,11 @@ from utils.plots import plot_one_box
 from utils.torch_utils import select_device, load_classifier, time_synchronized
 
 
-def img_detect(model, source, roi=0, imgsz=640, device='0', conf_thres=0.5, iou_thres=0.45, classes=None, agnostic_nms=False, augment=True):
-    x1 = 400
-    x2 = 1400
-    y1 = 600
-    y2 = 1040
+def img_detect(model, source, roi=0, roi_range=[0, 0, 0, 0], imgsz=640, device='0', conf_thres=0.5, iou_thres=0.45, classes=None, agnostic_nms=False, augment=True):
+    x1 = roi_range[0]
+    x2 = roi_range[1]
+    y1 = roi_range[2]
+    y2 = roi_range[3]
 
     result_label = []       # 存储检测结果，包括种类和置信度
     device = select_device(device)      # 设置设备
