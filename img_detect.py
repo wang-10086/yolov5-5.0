@@ -38,6 +38,8 @@ def img_detect(model, source, roi=0, roi_range=[0, 0, 0, 0], imgsz=640, device='
             cv2.imwrite('img_chopped.jpg', img_cut)
         else:
             print('ROI截取尺寸有误')
+            print(width)
+            print(height)
 
     # Set Dataloader,若进行ROI截取则读取img_chopped.jpg,若不进行ROI截取则读取原图，即source
     if roi:
