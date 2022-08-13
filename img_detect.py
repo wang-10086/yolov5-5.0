@@ -19,6 +19,8 @@ def img_detect(model, source, roi=0, roi_range=[0, 0, 0, 0], imgsz=640, device='
     y1 = roi_range[2]
     y2 = roi_range[3]
 
+    t0 = time.time()
+
     result_label = []       # 存储检测结果，包括种类和置信度
     device = select_device(device)      # 设置设备
     half = device.type != 'cpu'  # 有CUDA支持时使用半精度
@@ -53,7 +55,7 @@ def img_detect(model, source, roi=0, roi_range=[0, 0, 0, 0], imgsz=640, device='
     # Run inference
     if device.type != 'cpu':
         model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # 进行一次前置推理，检测程序能否正常运行
-    t0 = time.time()        # 开始检测的时间
+    t1 = time.time()        # 开始检测的时间
     for path, img, im0s, vid_cap in dataset:
         img = torch.from_numpy(img).to(device)
         img = img.half() if half else img.float()  # uint8 to fp16/32
@@ -62,12 +64,12 @@ def img_detect(model, source, roi=0, roi_range=[0, 0, 0, 0], imgsz=640, device='
             img = img.unsqueeze(0)
 
         # Inference 推理
-        t1 = time_synchronized()        # 正式开始推理的时间
+        t2 = time_synchronized()        # 正式开始推理的时间
         pred = model(img, augment=augment)[0]
 
         # Apply NMS 应用非极大值抑制
         pred = non_max_suppression(pred, conf_thres, iou_thres, classes=classes, agnostic=agnostic_nms)
-        t2 = time_synchronized()        # 非极大值抑制结束的时间
+        t3 = time_synchronized()        # 非极大值抑制结束的时间
 
         # Process detections
         for i, det in enumerate(pred):  # detections per image
@@ -97,8 +99,10 @@ def img_detect(model, source, roi=0, roi_range=[0, 0, 0, 0], imgsz=640, device='
             t4 = time.time()        # 完成推理、检测和保存结果的时间
             # Print time (inference + NMS)
             # print(f'{s}Done. ({t2 - t1:.3f}s)')
-            # print(f'({t4 - t0:.3f}s)')
             print(f'{s}Done. ')     # 打印图片大小和检测结果
+            print(f'(img processing: {t1 - t0:.3f}s)')
+            print(f'(inference+NMS: {t3 - t2:.3f}s)')
+            print(f'(total time: {t4 - t0:.3f}s)')
 
             # 返回结果
             return im0, result_label, det

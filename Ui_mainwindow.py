@@ -193,6 +193,9 @@ class Ui_MainWindow(object):
         self.pushButton_3 = QtWidgets.QPushButton(self.tab_2)
         self.pushButton_3.setGeometry(QtCore.QRect(920, 430, 93, 28))
         self.pushButton_3.setObjectName("pushButton_3")
+        self.pushButton_6 = QtWidgets.QPushButton(self.tab_2)
+        self.pushButton_6.setGeometry(QtCore.QRect(850, 530, 93, 28))
+        self.pushButton_6.setObjectName("pushButton_6")
         self.tabWidget.addTab(self.tab_2, "")
         self.tab_3 = QtWidgets.QWidget()
         self.tab_3.setObjectName("tab_3")
@@ -363,7 +366,7 @@ class Ui_MainWindow(object):
         self.menubar.addAction(self.menu_5.menuAction())
 
         self.retranslateUi(MainWindow)
-        self.tabWidget.setCurrentIndex(0)
+        self.tabWidget.setCurrentIndex(1)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
@@ -383,6 +386,7 @@ class Ui_MainWindow(object):
         self.label_13.setText(_translate("MainWindow", "期望输出帧率："))
         self.label_14.setText(_translate("MainWindow", "检测频率："))
         self.pushButton_3.setText(_translate("MainWindow", "退出检测"))
+        self.pushButton_6.setText(_translate("MainWindow", "test"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), _translate("MainWindow", "视频检测"))
         self.pushButton_4.setText(_translate("MainWindow", "退出检测"))
         self.label_16.setText(_translate("MainWindow", "置信度阈值："))

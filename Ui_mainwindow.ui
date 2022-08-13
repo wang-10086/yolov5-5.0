@@ -33,7 +33,7 @@
      <string notr="true">background-color: rgb(127, 139, 147);</string>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>1</number>
     </property>
     <widget class="QWidget" name="tab">
      <attribute name="title">
@@ -472,6 +472,19 @@
       </property>
       <property name="text">
        <string>退出检测</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_6">
+      <property name="geometry">
+       <rect>
+        <x>850</x>
+        <y>530</y>
+        <width>93</width>
+        <height>28</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>test</string>
       </property>
      </widget>
     </widget>

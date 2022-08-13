@@ -7,13 +7,13 @@ from numpy import random
 
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtWidgets import *
-from PyQt5.QtCore import pyqtSignal
 from Ui_mainwindow import Ui_MainWindow
 from settings import Ui_Form
 
 from img_detect import img_detect
 from model_load import model_load
 from utils.plots import plot_one_box, plot_one_box_new
+from video_detect_thread import VideoDetectThread
 from utils.general import xyxy2xywh
 
 global model
@@ -39,6 +39,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         self.pushButton_3.clicked.connect(self.video_quit)
         self.pushButton_4.clicked.connect(self.realtime_quit)
         self.pushButton_5.clicked.connect(self.realtime_detect)
+        self.pushButton_6.clicked.connect(self.video_thread)
         self.actionSettings.triggered.connect(lambda: self.opensettings())
         self.settings = QWidget()
         self.ui2 = Ui_Form()
@@ -46,6 +47,8 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         # 加载模型
         model = model_load(weights, device=device)
         print('模型加载完成')
+
+        self.thread_1 = None    # 初始化视频检测线程
 
     # 图片检测按钮槽函数--->pushButton
     def img_detect(self):
@@ -81,7 +84,8 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         t0 = time.time()  # 开始检测,并计时
         # 调用图片检测函数img_detect()进行检测，result[0]存储检测结果，是np.ndarray类型;result[1]存储检测种类和置信度，是一个字符串数组;
         # det存储检测结果的各项信息，包括检测框位置
-        result = img_detect(model=model, source=source, roi=roi, roi_range=roi_range, conf_thres=conf_thres, iou_thres=iou_thres)
+        result = img_detect(model=model, source=source, roi=roi, roi_range=roi_range, conf_thres=conf_thres,
+                            iou_thres=iou_thres)
 
         # 绘图部分
         if roi:
@@ -179,12 +183,12 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
                 # 进入路口区域增加注意力集中机制
                 if 85 < num + 1 < 180:
                     print('已进入路口区域')
-                    roi = 1     # 进入路口后强制进行ROI截取
-                    roi_range = [300, 1500, 300, 1000]      # 路口ROI截取范围,区别于正常ROI截取范围
+                    roi = 1  # 进入路口后强制进行ROI截取
+                    roi_range = [300, 1500, 300, 1000]  # 路口ROI截取范围,区别于正常ROI截取范围
 
                 if roi:
                     offset = [roi_range[0], roi_range[2]]
-                    leftup_point = [roi_range[0], roi_range[2]]     # ROI截取区域左上角点坐标
+                    leftup_point = [roi_range[0], roi_range[2]]  # ROI截取区域左上角点坐标
                     rightdown_point = [roi_range[1], roi_range[3]]  # ROI截取区域右下角点坐标
                 else:
                     offset = [0, 0]
@@ -404,6 +408,17 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
 
         except CameraNotFound:
             print('未选中任何摄像头，请选择一个摄像头')
+
+    # 视频检测线程--->pushbutton_6
+    def video_thread(self):
+        global model
+        self.thread_1 = VideoDetectThread(model=model)
+        self.thread_1.signal.connect(self.print_ifo)
+        self.thread_1.start()
+
+    # 打印信息
+    def print_ifo(self, msg):
+        print(msg)
 
 
 class SettingsWindow(QWidget, Ui_Form):
