@@ -52,10 +52,13 @@ def img_detect(model, source, roi=0, roi_range=[0, 0, 0, 0], imgsz=640, device='
     # Get names
     names = model.module.names if hasattr(model, 'module') else model.names
 
+    t1 = time.time()        # 开始检测的时间
+
     # Run inference
+
     if device.type != 'cpu':
         model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # 进行一次前置推理，检测程序能否正常运行
-    t1 = time.time()        # 开始检测的时间
+
     for path, img, im0s, vid_cap in dataset:
         img = torch.from_numpy(img).to(device)
         img = img.half() if half else img.float()  # uint8 to fp16/32
@@ -101,8 +104,11 @@ def img_detect(model, source, roi=0, roi_range=[0, 0, 0, 0], imgsz=640, device='
             # print(f'{s}Done. ({t2 - t1:.3f}s)')
             print(f'{s}Done. ')     # 打印图片大小和检测结果
             print(f'(img processing: {t1 - t0:.3f}s)')
+            print(f'(pre_inference: {t2 - t1:.3f}s)')
             print(f'(inference+NMS: {t3 - t2:.3f}s)')
             print(f'(total time: {t4 - t0:.3f}s)')
 
+            time_statistics = [t1-t0, t2-t1, t3-t2, t4-t0]      # 各部分用时数据
+
             # 返回结果
-            return im0, result_label, det
+            return im0, result_label, det, time_statistics

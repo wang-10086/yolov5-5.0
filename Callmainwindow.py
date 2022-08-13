@@ -4,6 +4,8 @@ import os
 import time
 import torch
 from numpy import random
+import numpy as np
+import pandas as pd
 
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtWidgets import *
@@ -160,6 +162,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
 
             # 视频检测
             num = 0  # 用于检测计数
+            time_statistics = []
             while True:
                 # 视频检测退出功能
                 if video_quit:
@@ -224,6 +227,9 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
                     # 将QImage转换为QPixmap
                     result_map = QPixmap.fromImage(img_result)
 
+                    # 统计各部分用时
+                    time_statistics.append(results[3])
+
                 else:
                     # 不进行检测时，直接输出原图像
                     result_map = QPixmap('original_img.jpg')
@@ -246,6 +252,14 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
                 if c == 27:  # 若按下ESC则退出
                     capture.release()
                     break
+
+            # 将检测时间分布数据保存至excel
+            time_resume = np.array(time_statistics)
+            time_df = pd.DataFrame(time_resume)
+            time_df.columns = ['img processing', 'pre_inference', 'inference+NMS', 'total']
+            writer = pd.ExcelWriter('检测用时.xlsx')
+            time_df.to_excel(writer, 'page_1', float_format='%.3f', index=False)
+            writer.save()
 
             # 释放capture，销毁所有窗口，删除临时文件
             capture.release()
