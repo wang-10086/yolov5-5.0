@@ -3,6 +3,7 @@ import cv2
 from pathlib import Path
 
 import torch
+import torch.backends.cudnn as cudnn
 from numpy import random
 
 from utils.datasets import LoadStreams, LoadImages
@@ -45,8 +46,10 @@ def img_detect(model, source, roi=0, roi_range=[0, 0, 0, 0], imgsz=640, device='
 
     # Set Dataloader,若进行ROI截取则读取img_chopped.jpg,若不进行ROI截取则读取原图，即source
     if roi:
+        cudnn.benchmark = True  # set True to speed up constant image size inference
         dataset = LoadImages('img_chopped.jpg', img_size=imgsz, stride=stride)  # 加载数据
     else:
+        cudnn.benchmark = True  # set True to speed up constant image size inference
         dataset = LoadImages(source, img_size=imgsz, stride=stride)     # 加载数据
 
     # Get names
