@@ -30,7 +30,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         global realtime_quit
         video_quit = 0
         realtime_quit = 0
-        weights = './runs/train/exp/weights/best.pt'
+        weights = './runs/train/exp3/weights/best.pt'
         device = '0'
 
         # 界面初始化
