@@ -65,7 +65,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         """
         global model
 
-        source = 'C:/Users/17262/Desktop/test.jpg'  # 检测图片的路径
+        source = 'C:/Users/17262/Desktop/signal.jpg'  # 检测图片的路径
         roi = self.actionIs_ROI.isChecked()  # 是否进行ROI截取
         conf_thres = self.doubleSpinBox.value()  # 置信度阈值
         iou_thres = self.doubleSpinBox_2.value()  # IOU阈值

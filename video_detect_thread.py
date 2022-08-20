@@ -2,147 +2,130 @@ from PyQt5.QtCore import QThread, pyqtSignal
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtWidgets import *
 
-import cv2
-import os
 import time
+import cv2
 import torch
+import torch.backends.cudnn as cudnn
 from numpy import random
 
-from img_detect import img_detect
-from Ui_mainwindow import Ui_MainWindow
-from utils.plots import plot_one_box, plot_one_box_new
+from utils.datasets import LoadStreams, LoadImages
+from utils.general import check_img_size, check_requirements, check_imshow, non_max_suppression, apply_classifier, \
+    scale_coords, xyxy2xywh, strip_optimizer, set_logging, increment_path
+from utils.plots import plot_one_box
+from utils.torch_utils import select_device, load_classifier, time_synchronized
 
 
 class VideoDetectThread(QThread):
-    signal = pyqtSignal(object)
+    _signal = pyqtSignal(object)
+    _signal2 = pyqtSignal(object)
 
-    def __init__(self, model, parent=None):
+    def __init__(self, model, conf_thres, iou_thres, parent=None):
         super(VideoDetectThread, self).__init__(parent)
         self.model = model
+        self.conf_thres = conf_thres
+        self.iou_thres = iou_thres
 
     def run(self):
-        # for i in range(10):
-        #     self.signal.emit(i)
-        # self.signal.emit('程序结束')
-        x1 = 400
-        x2 = 1400
-        y1 = 600
-        y2 = 1040
+        # 初始化
         model = self.model
+        conf_thres = self.conf_thres / 100
+        iou_thres = self.iou_thres / 100
+        result_label = []  # 空字符串存储检测结果
 
-        # Get names and colors
-        names = model.module.names if hasattr(model, 'module') else model.names
-        colors = [[random.randint(0, 255) for _ in range(3)] for _ in names]
+        device = '0'
+        imgsz = 640
+        device = select_device(device)  # 设置设备
+        half = device.type != 'cpu'  # 有CUDA支持时使用半精度
+
+        stride = int(model.stride.max())  # model stride
+        imgsz = check_img_size(imgsz, s=stride)  # 验证输入尺寸大小，如果不符合要求则进行自动调整
+        if half:
+            model.half()  # to FP16
 
         try:
             # 文件读取
-            video_path = 'C:/Users/17262/Desktop/test.mp4'
             # video_path = QFileDialog.getOpenFileName(self, '选择视频文件', '.', 'Image files (*.mp4)')[0]
+            video_path = 'C:/Users/17262/Desktop/test.mp4'
             if video_path == '':
                 raise FileNotFoundError  # 如果未选择文件，即video_path为空，则主动抛出异常
-            capture = cv2.VideoCapture(video_path)  # 读取视频
 
-            # 视频检测
-            num = 0  # 用于检测计数
-            while True:
-                # 视频检测退出功能
-                # if video_quit:
-                #     video_quit = 0
-                #     print('退出')
-                #     break
+            t0 = time.time()  # 开始检测时间
+            # Set Dataloader
+            cudnn.benchmark = True  # set True to speed up constant image size inference
+            dataset = LoadImages(video_path, img_size=imgsz, stride=stride)
 
-                roi = 0  # 是否进行ROI截取
-                roi_range = [x1, x2, y1, y2]
-                conf_thres = 0.5  # 置信度阈值
-                iou_thres = 0.45  # IOU阈值
-                fps = 30  # 期望输出帧率
-                detect_frequency = 1  # 检测频率，即每detect_frequency帧检测一次
-                # roi = Ui_MainWindow.actionIs_ROI.isChecked()  # 是否进行ROI截取
-                # roi_range = [x1, x2, y1, y2]
-                # conf_thres = Ui_MainWindow.doubleSpinBox_3.value()  # 置信度阈值
-                # iou_thres = Ui_MainWindow.doubleSpinBox_4.value()  # IOU阈值
-                # fps = Ui_MainWindow.spinBox.value()  # 期望输出帧率
-                # detect_frequency = Ui_MainWindow.spinBox_2.value()  # 检测频率，即每detect_frequency帧检测一次
+            # Get names and colors
+            names = model.module.names if hasattr(model, 'module') else model.names
+            colors = [[random.randint(0, 255) for _ in range(3)] for _ in names]
 
-                t0 = time.time()  # 开始检测的时间
-                ref, frame = capture.read()  # 读取当前帧
-                if not ref:
-                    print('读取当前帧失败')
-                    break
+            # Run inference
+            if device.type != 'cpu':
+                model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
+            for path, img, im0s, vid_cap in dataset:
+                img = torch.from_numpy(img).to(device)
+                img = img.half() if half else img.float()  # uint8 to fp16/32
+                img /= 255.0  # 0 - 255 to 0.0 - 1.0
+                if img.ndimension() == 3:
+                    img = img.unsqueeze(0)
 
-                # 进入路口区域增加注意力集中机制
-                if 85 < num + 1 < 180:
-                    print('已进入路口区域')
-                    roi = 1  # 进入路口后强制进行ROI截取
-                    roi_range = [300, 1500, 300, 1000]  # 路口ROI截取范围,区别于正常ROI截取范围
+                # Inference
+                t1 = time_synchronized()
+                pred = model(img, augment=True)[0]  # augment默认为True,后续可根据要求更改
 
-                if roi:
-                    offset = [roi_range[0], roi_range[2]]
-                    leftup_point = [roi_range[0], roi_range[2]]  # ROI截取区域左上角点坐标
-                    rightdown_point = [roi_range[1], roi_range[3]]  # ROI截取区域右下角点坐标
-                else:
-                    offset = [0, 0]
+                # Apply NMS
+                pred = non_max_suppression(pred, conf_thres, iou_thres, classes=None,
+                                           agnostic=False)
+                t2 = time_synchronized()
 
-                cv2.imwrite('original_img.jpg', frame)  # 将当前帧暂存为jpg图像
-                original_img = cv2.imread('original_img.jpg')
-                tl = 3 or round(0.002 * (original_img.shape[0] + original_img.shape[1]) / 2) + 1  # ROI框的线宽
+                # Process detections
+                for i, det in enumerate(pred):  # detections per image
+                    p, s, im0, frame = path[i], '%g: ' % i, im0s[i].copy(), dataset.count
 
-                # 进行检测，每隔detect_frequency帧进行一次检测
-                if num % detect_frequency == 0:
-                    # 检测部分
-                    results = img_detect(model=model, source='original_img.jpg', roi=roi, roi_range=roi_range,
-                                         conf_thres=conf_thres, iou_thres=iou_thres)
+                    s += '%gx%g ' % img.shape[2:]  # print string
+                    gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
+                    if len(det):
+                        # Rescale boxes from img_size to im0 size
+                        det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
 
-                    # 绘图部分
-                    if roi:
-                        cv2.rectangle(original_img, leftup_point, rightdown_point, color=[0, 0, 255], thickness=tl,
-                                      lineType=cv2.LINE_AA)
-                    gn = torch.tensor(results[0].shape)[[1, 0, 1, 0]]  # normalization gain whwh
-                    for *xyxy, conf, cls in reversed(results[2]):
-                        # 标准化检测框信息，xywh分别代表检测框的中心点坐标和宽高，宽高均是绝对长度除以图片宽高的结果
-                        # xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()
-                        # 保存检测结果的种类和置信度，并在原图上加以绘制
-                        label = f'{names[int(cls)]} {conf:.2f}'
-                        plot_one_box_new(xyxy, original_img, label=label, color=colors[int(cls)], line_thickness=3,
-                                         offset=offset)
+                        # Print results
+                        for c in det[:, -1].unique():
+                            n = (det[:, -1] == c).sum()  # detections per class
+                            s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
 
-                    # RGB-->BGR，并转换为QImage格式
-                    img_result = cv2.cvtColor(original_img, cv2.COLOR_RGB2BGR)
-                    img_result = QImage(img_result, img_result.shape[1], img_result.shape[0], img_result.shape[1] * 3,
-                                        QImage.Format_RGB888)
+                        # Write results
+                        for *xyxy, conf, cls in reversed(det):
+                            label = f'{names[int(cls)]} {conf:.2f}'
+                            result_label.append(label)
+                            plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=3)
 
-                    # 将QImage转换为QPixmap
-                    result_map = QPixmap.fromImage(img_result)
+                print('')
+                self._signal.emit(im0)
+                # 对绘制后得到的结果进行加工处理
+                # img = cv2.cvtColor(im0, cv2.COLOR_RGB2BGR)  # RGB to BGR
+                # img_result = QImage(img, img.shape[1], img.shape[0], img.shape[1] * 3, QImage.Format_RGB888)
 
-                else:
-                    # 不进行检测时，直接输出原图像
-                    result_map = QPixmap('original_img.jpg')
+                # 将结果在label中显示出来
+                # map = QPixmap.fromImage(img_result)
+                # self.label.setPixmap(map)
+                # self.label.setScaledContents(True)
 
-                # 将图片在label_8上进行显示
-                # Ui_MainWindow.label_8.setPixmap(result_map)
-                # Ui_MainWindow.label_8.setScaledContents(True)
+                # 将检测结果的类别和置信度显示在label_6上
+                s = ''  # 空字符串用于存储检测结果
+                for label in result_label:
+                    s = s + label + '\n'
+                self._signal2.emit(s)
+                # self.label_6.setText(s)
 
-                # 计数加一
-                num = num + 1
+                t3 = time.time()  # 结束检测时间
+                # Print time (inference + NMS)
+                print(f'{s}Done. ({t2 - t1:.3f}s)')
+                # print(f'({t3 - t0:.3f}s)')
 
-                # 延时程序，达到指定时间后进入下一循环
-                while time.time() - t0 < 1 / fps:
-                    time.sleep(0.0001)
-                t1 = time.time()
-                print('第%d帧检测用时：%.4fs' % (num, t1 - t0))
-
-                # 退出功能
-                c = cv2.waitKey(0) & 0xff  # 判断按下按键
-                if c == 27:  # 若按下ESC则退出
-                    capture.release()
-                    break
-
-            # 释放capture，销毁所有窗口，删除临时文件
-            capture.release()
-            # cv2.destroyAllWindow()
-            os.remove('original_img.jpg')
-            os.remove('img_chopped.jpg')
+                time.sleep(5)
 
         except FileNotFoundError:
             print('请重新读取文件')
-        self.signal.emit('程序结束')
+
+    @property
+    def signal(self):
+        return self._signal
