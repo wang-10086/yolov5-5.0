@@ -7,8 +7,6 @@ import cv2
 import torch
 import torch.backends.cudnn as cudnn
 from numpy import random
-import tkinter as tk
-from tkinter import filedialog
 
 from utils.datasets import LoadStreams, LoadImages
 from utils.general import check_img_size, check_requirements, check_imshow, non_max_suppression, apply_classifier, \
@@ -17,12 +15,12 @@ from utils.plots import plot_one_box
 from utils.torch_utils import select_device, load_classifier, time_synchronized
 
 
-class VideoDetectThread(QThread):
+class ImageDetectThread(QThread):
     _signal = pyqtSignal(object)
     _signal2 = pyqtSignal(object)
 
     def __init__(self, model, conf_thres, iou_thres, parent=None):
-        super(VideoDetectThread, self).__init__(parent)
+        super(ImageDetectThread, self).__init__(parent)
         self.model = model
         self.conf_thres = conf_thres
         self.iou_thres = iou_thres
@@ -39,10 +37,6 @@ class VideoDetectThread(QThread):
         device = select_device(device)  # 设置设备
         half = device.type != 'cpu'  # 有CUDA支持时使用半精度
 
-        # 实例化打开文件窗口
-        root = tk.Tk()
-        root.withdraw()
-
         stride = int(model.stride.max())  # model stride
         imgsz = check_img_size(imgsz, s=stride)  # 验证输入尺寸大小，如果不符合要求则进行自动调整
         if half:
@@ -50,14 +44,15 @@ class VideoDetectThread(QThread):
 
         try:
             # 文件读取
-            video_path = filedialog.askopenfilename()
-            # video_path = 'C:/Users/17262/Desktop/test.mp4'
-            if video_path == '':
+            # image_path = QFileDialog.getOpenFileName(self, '选择图片', '.', 'Image files (*.jpg)')[0]
+            image_path = 'C:/Users/17262/Desktop/signal.jpg'
+            if image_path == '':
                 raise FileNotFoundError  # 如果未选择文件，即video_path为空，则主动抛出异常
 
+            t0 = time.time()  # 开始检测时间
             # Set Dataloader
             cudnn.benchmark = True  # set True to speed up constant image size inference
-            dataset = LoadImages(video_path, img_size=imgsz, stride=stride)
+            dataset = LoadImages(image_path, img_size=imgsz, stride=stride)
 
             # Get names and colors
             names = model.module.names if hasattr(model, 'module') else model.names
@@ -67,8 +62,6 @@ class VideoDetectThread(QThread):
             if device.type != 'cpu':
                 model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
             for path, img, im0s, vid_cap in dataset:
-                t0 = time.time()  # 每帧开始检测时间
-                result_label = []
                 img = torch.from_numpy(img).to(device)
                 img = img.half() if half else img.float()  # uint8 to fp16/32
                 img /= 255.0  # 0 - 255 to 0.0 - 1.0
@@ -106,6 +99,14 @@ class VideoDetectThread(QThread):
                             plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=3)
 
                 self._signal.emit(im0)
+                # 对绘制后得到的结果进行加工处理
+                # img = cv2.cvtColor(im0, cv2.COLOR_RGB2BGR)  # RGB to BGR
+                # img_result = QImage(img, img.shape[1], img.shape[0], img.shape[1] * 3, QImage.Format_RGB888)
+
+                # 将结果在label中显示出来
+                # map = QPixmap.fromImage(img_result)
+                # self.label.setPixmap(map)
+                # self.label.setScaledContents(True)
 
                 # 将检测结果的类别和置信度显示在label_6上
                 s = ''  # 空字符串用于存储检测结果
@@ -117,9 +118,9 @@ class VideoDetectThread(QThread):
                 t3 = time.time()  # 结束检测时间
                 # Print time (inference + NMS)
                 print(f'{s}Done. ({t2 - t1:.3f}s)')
-                print(f'总用时({t3 - t0:.3f}s)')
+                # print(f'({t3 - t0:.3f}s)')
 
-                # time.sleep(5)
+                time.sleep(1)
 
         except FileNotFoundError:
             print('请重新读取文件')
