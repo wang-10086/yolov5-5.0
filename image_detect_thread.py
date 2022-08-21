@@ -1,9 +1,6 @@
 from PyQt5.QtCore import QThread, pyqtSignal
-from PyQt5.QtGui import QPixmap, QImage
-from PyQt5.QtWidgets import *
 
 import time
-import cv2
 import torch
 import torch.backends.cudnn as cudnn
 from numpy import random
@@ -16,8 +13,8 @@ from utils.torch_utils import select_device, load_classifier, time_synchronized
 
 
 class ImageDetectThread(QThread):
-    _signal = pyqtSignal(object)
-    _signal2 = pyqtSignal(object)
+    _signal = pyqtSignal(object)        # 发送信号,用于向主线程发送检测结果图片
+    _signal2 = pyqtSignal(object)       # 发送信号,用于向主线程发送检测结果数据
 
     def __init__(self, model, conf_thres, iou_thres, parent=None):
         super(ImageDetectThread, self).__init__(parent)
