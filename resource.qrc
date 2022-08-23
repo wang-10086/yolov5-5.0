@@ -1,0 +1,8 @@
+<RCC>
+  <qresource prefix="pic">
+    <file>resource/dianzan.png</file>
+    <file>resource/camera.png</file>
+    <file>resource/image.png</file>
+    <file>resource/video.png</file>
+  </qresource>
+</RCC>

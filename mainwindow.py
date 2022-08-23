@@ -14,10 +14,10 @@ global model
 
 
 class MyMainWindow(QMainWindow, Ui_MainWindow):
-    signal_1 = pyqtSignal(object)       # 接收信号,用于接收来自子线程的检测结果图片
-    signal_2 = pyqtSignal(object)       # 接收信号,用于接受来自子线程的检测结果数据
-    signal_3 = pyqtSignal(object)     # 发送信号,用于向子线程发送conf_thres
-    signal_4 = pyqtSignal(object)     # 发送信号,用于向子线程发送iou_thres
+    signal_1 = pyqtSignal(object)  # 接收信号,用于接收来自子线程的检测结果图片
+    signal_2 = pyqtSignal(object)  # 接收信号,用于接受来自子线程的检测结果数据
+    signal_3 = pyqtSignal(object)  # 发送信号,用于向子线程发送conf_thres
+    signal_4 = pyqtSignal(object)  # 发送信号,用于向子线程发送iou_thres
 
     def __init__(self, parent=None):
         global model
@@ -28,8 +28,8 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         super(MyMainWindow, self).__init__(parent)
         self.setupUi(self)
         self.pushButton.clicked.connect(self.detect)
-        self.image_thread = None        # 初始化图片检测线程
-        self.video_thread = None        # 初始化视频检测线程
+        self.image_thread = None  # 初始化图片检测线程
+        self.video_thread = None  # 初始化视频检测线程
 
         # 加载模型
         model = model_load(weights, device=device)
@@ -45,6 +45,15 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         self.label.setPixmap(map)
         self.label.setScaledContents(True)
 
+    def print_ifo(self, s):
+        self.label_6.setText(s)
+
+    def progress(self, progress):
+        current_frame = progress[0]
+        total_frame = progress[1]
+        self.progressBar.setMaximum(total_frame)
+        self.progressBar.setValue(current_frame)
+
     def detect(self):
         global model
         # 图片检测
@@ -52,6 +61,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
             self.image_thread = ImageDetectThread(model=model, conf_thres=self.horizontalSlider.value(),
                                                   iou_thres=self.horizontalSlider_2.value())
             self.image_thread.signal.connect(self.display)
+            self.image_thread.signal2.connect(self.print_ifo)
             self.image_thread.start()
 
         # 视频检测
@@ -59,6 +69,8 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
             self.video_thread = VideoDetectThread(model=model, conf_thres=self.horizontalSlider.value(),
                                                   iou_thres=self.horizontalSlider_2.value())
             self.video_thread.signal.connect(self.display)
+            self.video_thread.signal2.connect(self.print_ifo)
+            self.video_thread.signal3.connect(self.progress)
             self.video_thread.start()
 
         # 实时检测

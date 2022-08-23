@@ -15,8 +15,9 @@ from utils.torch_utils import select_device, load_classifier, time_synchronized
 
 
 class VideoDetectThread(QThread):
-    _signal = pyqtSignal(object)        # 发送信号,用于向主线程发送检测结果图片
-    _signal2 = pyqtSignal(object)       # 发送信号,用于向主线程发送检测结果数据
+    _signal = pyqtSignal(object)  # 发送信号,用于向主线程发送检测结果图片
+    _signal2 = pyqtSignal(object)  # 发送信号,用于向主线程发送检测结果数据
+    _signal3 = pyqtSignal(object)   # 发送信号,用于向主线程发送进度
 
     def __init__(self, model, conf_thres, iou_thres, parent=None):
         super(VideoDetectThread, self).__init__(parent)
@@ -29,7 +30,6 @@ class VideoDetectThread(QThread):
         model = self.model
         conf_thres = self.conf_thres / 100
         iou_thres = self.iou_thres / 100
-        result_label = []  # 空字符串存储检测结果
 
         device = '0'
         imgsz = 640
@@ -63,7 +63,7 @@ class VideoDetectThread(QThread):
             # Run inference
             if device.type != 'cpu':
                 model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
-            for path, img, im0s, vid_cap in dataset:
+            for path, img, im0s, vid_cap, current_frame, total_frame in dataset:
                 t0 = time.time()  # 每帧开始检测时间
                 result_label = []
                 img = torch.from_numpy(img).to(device)
@@ -109,7 +109,7 @@ class VideoDetectThread(QThread):
                 for label in result_label:
                     s = s + label + '\n'
                 self._signal2.emit(s)
-                # self.label_6.setText(s)
+                self._signal3.emit([current_frame, total_frame])
 
                 t3 = time.time()  # 结束检测时间
                 # Print time (inference + NMS)
@@ -118,9 +118,19 @@ class VideoDetectThread(QThread):
 
                 # time.sleep(5)
 
+            root.mainloop()
+
         except FileNotFoundError:
             print('请重新读取文件')
 
     @property
     def signal(self):
         return self._signal
+
+    @property
+    def signal2(self):
+        return self._signal2
+
+    @property
+    def signal3(self):
+        return self._signal3
