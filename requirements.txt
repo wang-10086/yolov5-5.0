@@ -30,3 +30,4 @@ pycocotools>=2.0  # COCO mAP
 
 requests~=2.28.1
 unet~=0.7.7
+pyqt5~=5.15.7
