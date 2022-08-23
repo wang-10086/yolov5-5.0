@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="pic">
+    <file>resource/profile_photo.jpg</file>
     <file>resource/dianzan.png</file>
     <file>resource/camera.png</file>
     <file>resource/image.png</file>

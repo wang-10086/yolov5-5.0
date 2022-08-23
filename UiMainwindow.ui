@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1200</width>
-    <height>737</height>
+    <height>741</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -24,7 +24,7 @@
       <x>0</x>
       <y>0</y>
       <width>280</width>
-      <height>681</height>
+      <height>651</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -360,10 +360,10 @@ border-color: rgb(0, 0, 0);</string>
     <widget class="QLabel" name="label_9">
      <property name="geometry">
       <rect>
-       <x>90</x>
-       <y>540</y>
-       <width>101</width>
-       <height>101</height>
+       <x>100</x>
+       <y>530</y>
+       <width>71</width>
+       <height>71</height>
       </rect>
      </property>
      <property name="text">
@@ -383,7 +383,7 @@ border-color: rgb(0, 0, 0);</string>
       <x>279</x>
       <y>0</y>
       <width>921</width>
-      <height>681</height>
+      <height>651</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -484,6 +484,38 @@ border-color: rgb(0, 0, 0);</string>
       <number>0</number>
      </property>
     </widget>
+   </widget>
+   <widget class="QLabel" name="label_10">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>650</y>
+      <width>41</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="pixmap">
+     <pixmap resource="resource.qrc">:/pic/resource/profile_photo.jpg</pixmap>
+    </property>
+    <property name="scaledContents">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_11">
+    <property name="geometry">
+     <rect>
+      <x>70</x>
+      <y>660</y>
+      <width>261</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
