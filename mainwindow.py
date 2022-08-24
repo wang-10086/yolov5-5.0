@@ -22,6 +22,10 @@ from utils.torch_utils import select_device, load_classifier, time_synchronized
 
 global model
 global quit_flag
+global conf_thres
+global iou_thres
+global detect_frequency
+global fps
 
 
 class MyMainWindow(QMainWindow, Ui_MainWindow):
@@ -33,6 +37,10 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self, parent=None):
         global model
         global quit_flag
+        global conf_thres
+        global iou_thres
+        global detect_frequency
+        global fps
 
         quit_flag = 0
         weights = 'signal.pt'
@@ -45,8 +53,17 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         self.label_11.setVisible(0)
         self.pushButton.clicked.connect(self.detect)
         self.pushButton_2.clicked.connect(self.quit)
+        self.horizontalSlider.valueChanged.connect(self.refresh_conf_thres)
+        self.horizontalSlider_2.valueChanged.connect(self.refresh_iou_thres)
+        self.spinBox.valueChanged.connect(self.refresh_detect_frequency)
+        self.spinBox_2.valueChanged.connect(self.refresh_fps)
         self.image_thread = None  # 初始化图片检测线程
         self.video_thread = None  # 初始化视频检测线程
+
+        conf_thres = self.horizontalSlider.value()
+        iou_thres = self.horizontalSlider_2.value()
+        detect_frequency = self.spinBox.value()
+        fps = self.spinBox_2.value()
 
         # 加载模型
         model = model_load(weights, device=device)
@@ -75,6 +92,22 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         global quit_flag
         quit_flag = 1
 
+    def refresh_conf_thres(self, value):
+        global conf_thres
+        conf_thres = value
+
+    def refresh_iou_thres(self, value):
+        global iou_thres
+        iou_thres = value
+
+    def refresh_detect_frequency(self, value):
+        global detect_frequency
+        detect_frequency = value
+
+    def refresh_fps(self, value):
+        global fps
+        fps = value
+
     def detect(self):
         global model
         global quit_flag
@@ -95,8 +128,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
             quit_flag = 0
             self.label_10.setVisible(0)
             self.label_11.setVisible(0)
-            self.video_thread = VideoDetectThread(model=model, conf_thres=self.horizontalSlider.value(),
-                                                  iou_thres=self.horizontalSlider_2.value())
+            self.video_thread = VideoDetectThread(model=model)
             self.video_thread.signal.connect(self.display)
             self.video_thread.signal2.connect(self.print_ifo)
             self.video_thread.signal3.connect(self.progress)
@@ -112,21 +144,21 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
 class VideoDetectThread(QThread):
     _signal = pyqtSignal(object)  # 发送信号,用于向主线程发送检测结果图片
     _signal2 = pyqtSignal(object)  # 发送信号,用于向主线程发送检测结果数据
-    _signal3 = pyqtSignal(object)   # 发送信号,用于向主线程发送进度
+    _signal3 = pyqtSignal(object)  # 发送信号,用于向主线程发送进度
 
-    def __init__(self, model, conf_thres, iou_thres, parent=None):
+    def __init__(self, model, parent=None):
         super(VideoDetectThread, self).__init__(parent)
         self.model = model
-        self.conf_thres = conf_thres
-        self.iou_thres = iou_thres
 
     def run(self):
         global quit_flag
+        global conf_thres
+        global iou_thres
+        global detect_frequency
+        global fps
+
         # 初始化
         model = self.model
-        conf_thres = self.conf_thres / 100
-        iou_thres = self.iou_thres / 100
-
         device = '0'
         imgsz = 640
         device = select_device(device)  # 设置设备
@@ -179,7 +211,7 @@ class VideoDetectThread(QThread):
                 pred = model(img, augment=True)[0]  # augment默认为True,后续可根据要求更改
 
                 # Apply NMS
-                pred = non_max_suppression(pred, conf_thres, iou_thres, classes=None,
+                pred = non_max_suppression(pred, conf_thres / 100, iou_thres / 100, classes=None,
                                            agnostic=False)
                 t2 = time_synchronized()
 
@@ -206,19 +238,21 @@ class VideoDetectThread(QThread):
 
                 self._signal.emit(im0)
 
-                # 将检测结果的类别和置信度显示在label_6上
+                # 将检测结果的类别和置信度返回
                 s = ''  # 空字符串用于存储检测结果
                 for label in result_label:
                     s = s + label + '\n'
                 self._signal2.emit(s)
                 self._signal3.emit([current_frame, total_frame])
 
+                # 延时程序，达到指定时间后进入下一循环
+                while time.time() - t0 < 1 / fps:
+                    time.sleep(0.0001)
+
                 t3 = time.time()  # 结束检测时间
                 # Print time (inference + NMS)
-                print(f'{s}Done. ({t2 - t1:.3f}s)')
+                print(f'{s}Inference+NMS:({t2 - t1:.3f}s)')
                 print(f'总用时({t3 - t0:.3f}s)')
-
-                # time.sleep(5)
 
             root.mainloop()
 
@@ -236,7 +270,6 @@ class VideoDetectThread(QThread):
     @property
     def signal3(self):
         return self._signal3
-
 
 
 if __name__ == "__main__":
