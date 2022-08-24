@@ -19,13 +19,18 @@ from utils.general import check_img_size, check_requirements, check_imshow, non_
 from utils.plots import plot_one_box
 from utils.torch_utils import select_device, load_classifier, time_synchronized
 
-global model, device, quit_flag, conf_thres, iou_thres, detect_frequency, fps
+global model, quit_flag, conf_thres, iou_thres, detect_frequency, fps
 
 
 class MyMainWindow(QMainWindow, Ui_MainWindow):
 
     def __init__(self, parent=None):
-        global model, device, quit_flag, conf_thres, iou_thres, detect_frequency, fps
+        global model, quit_flag, conf_thres, iou_thres, detect_frequency, fps
+
+        # 初始化相关参数
+        quit_flag = 0
+        weights = 'signal.pt'
+        device = '0'
 
         # 界面初始化
         super(MyMainWindow, self).__init__(parent)
@@ -43,12 +48,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
 
         self.image_thread = None  # 初始化图片检测线程
         self.video_thread = None  # 初始化视频检测线程
-        self.realtime_thread = None # 初始化实时检测线程
-
-        # 初始化相关参数
-        quit_flag = 0
-        weights = 'signal.pt'
-        device = '0'
+        self.realtime_thread = None  # 初始化实时检测线程
 
         conf_thres = self.horizontalSlider.value()
         iou_thres = self.horizontalSlider_2.value()
@@ -82,8 +82,8 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         """
         进度条处理槽函数,接收来自视频检测子线程的进度数据
         """
-        current_frame = progress[0]     # 当前帧
-        total_frame = progress[1]       # 总帧数
+        current_frame = progress[0]  # 当前帧
+        total_frame = progress[1]  # 总帧数
         self.progressBar.setMaximum(total_frame)
         self.progressBar.setValue(current_frame)
 
@@ -163,16 +163,17 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
 
 
 class ImageDetectThread(QThread):
-    _signal = pyqtSignal(object)        # 发送信号,用于向主线程发送检测结果图片
-    _signal2 = pyqtSignal(object)       # 发送信号,用于向主线程发送检测结果数据
+    _signal = pyqtSignal(object)  # 发送信号,用于向主线程发送检测结果图片
+    _signal2 = pyqtSignal(object)  # 发送信号,用于向主线程发送检测结果数据
 
     def __init__(self, parent=None):
         super(ImageDetectThread, self).__init__(parent)
 
     def run(self):
-        global model, device, quit_flag, conf_thres, iou_thres
+        global model, quit_flag, conf_thres, iou_thres
 
         # 初始化
+        device = '0'
         result_label = []  # 空字符串存储检测结果
 
         imgsz = 640
@@ -219,7 +220,7 @@ class ImageDetectThread(QThread):
                 pred = model(img, augment=True)[0]  # augment默认为True,后续可根据要求更改
 
                 # Apply NMS
-                pred = non_max_suppression(pred, conf_thres/100, iou_thres/100, classes=None,
+                pred = non_max_suppression(pred, conf_thres / 100, iou_thres / 100, classes=None,
                                            agnostic=False)
                 t2 = time_synchronized()
 
@@ -279,9 +280,10 @@ class VideoDetectThread(QThread):
         super(VideoDetectThread, self).__init__(parent)
 
     def run(self):
-        global model, device, quit_flag, conf_thres, iou_thres, detect_frequency, fps
+        global model, quit_flag, conf_thres, iou_thres, detect_frequency, fps
 
         # 初始化
+        device = '0'
         imgsz = 640
         device = select_device(device)  # 设置设备
         half = device.type != 'cpu'  # 有CUDA支持时使用半精度
@@ -397,14 +399,16 @@ class VideoDetectThread(QThread):
 class RealtimeDetectThread(QThread):
     _signal = pyqtSignal(object)  # 发送信号,用于向主线程发送检测结果图片,格式为一个数组
     _signal2 = pyqtSignal(object)  # 发送信号,用于向主线程发送检测结果数据,格式为一个字符串
+    _signal3 = pyqtSignal(object)  # 发送信号,用于向主线程发送进度值,格式为一个数组:[当前帧, 总帧数]
 
     def __init__(self, parent=None):
         super(RealtimeDetectThread, self).__init__(parent)
 
     def run(self):
-        global model, device, quit_flag, conf_thres, iou_thres, detect_frequency, fps
+        global model, quit_flag, conf_thres, iou_thres, detect_frequency, fps
 
         # 初始化
+        device = '0'
         imgsz = 640
         device = select_device(device)  # 设置设备
         half = device.type != 'cpu'  # 有CUDA支持时使用半精度
@@ -433,7 +437,6 @@ class RealtimeDetectThread(QThread):
                 # 终止线程
                 if quit_flag == 1:
                     quit_flag = 0
-                    self.terminate()
                     print('已退出')
                     break
 
@@ -502,10 +505,6 @@ class RealtimeDetectThread(QThread):
     @property
     def signal2(self):
         return self._signal2
-
-    @property
-    def signal3(self):
-        return self._signal3
 
 
 if __name__ == "__main__":
