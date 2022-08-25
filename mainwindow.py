@@ -20,6 +20,16 @@ from utils.plots import plot_one_box
 from utils.torch_utils import select_device, load_classifier, time_synchronized
 
 global model, device_id,  quit_flag, conf_thres, iou_thres, detect_frequency, fps
+"""
+程序用到的全局变量：
+model:  检测用到的模型;
+device_id:  检测设备,'0'、'1'、'2'表示使用0、1、2号GPU,'cpu'表示使用cpu检测
+quit_flag:  退出检测标志,为1时退出检测
+conf_thres: 置信度阈值,程序内无需更改
+iou_thres:  IOU阈值,程序内无需更改
+detect_frequency:   检测频率,即每隔detect_frequency检测一次,程序内无需更改
+fps:    检测帧率,程序内无需更改
+"""
 
 
 class MyMainWindow(QMainWindow, Ui_MainWindow):
@@ -29,6 +39,9 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
     signal_4 = pyqtSignal(object)  # 发送信号,用于向子线程发送iou_thres
 
     def __init__(self, parent=None):
+        """
+        程序初始化
+        """
         global model, device_id,  quit_flag, conf_thres, iou_thres, detect_frequency, fps
 
         quit_flag = 0
@@ -40,12 +53,14 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         self.setupUi(self)
         self.label_10.setVisible(0)
         self.label_11.setVisible(0)
+
         self.pushButton.clicked.connect(self.detect)
         self.pushButton_2.clicked.connect(self.quit)
         self.horizontalSlider.valueChanged.connect(self.refresh_conf_thres)
         self.horizontalSlider_2.valueChanged.connect(self.refresh_iou_thres)
         self.spinBox.valueChanged.connect(self.refresh_detect_frequency)
         self.spinBox_2.valueChanged.connect(self.refresh_fps)
+
         self.image_thread = None  # 初始化图片检测线程
         self.video_thread = None  # 初始化视频检测线程
         self.realtime_thread = None     # 初始化实时检测线程
@@ -61,7 +76,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
 
     def display(self, img):
         """
-        检测结果显示函数,接收来自子线程的检测结果图片,并加以显示
+        检测结果显示函数,接收来自子线程的检测结果图片,并在label加以显示
         """
         # 对绘制后得到的结果进行加工处理
         img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)  # RGB to BGR
@@ -73,42 +88,64 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         self.label.setScaledContents(True)
 
     def print_ifo(self, s):
+        """
+        检测结果输出函数,接收来自子线程的检测结果文本,并在label_6加以输出
+        """
         self.label_6.setText(s)
 
     def progress(self, progress):
+        """
+        进度条处理函数,接收视频检测子线程传回的当前帧和总帧数,在progressBar上实时显示处理进度
+        """
         current_frame = progress[0]
         total_frame = progress[1]
         self.progressBar.setMaximum(total_frame)
         self.progressBar.setValue(current_frame)
 
     def quit(self):
+        """
+        退出检测函数,将quit_flag设为1,使得视频检测子线程或实时检测子线程终止
+        """
         global quit_flag
         quit_flag = 1
 
     def refresh_conf_thres(self, value):
+        """
+        刷新置信度阈值函数,作为horizontalSlider.valueChanged()信号的槽函数,其值改变时刷新conf_thres
+        """
         global conf_thres
         conf_thres = value
 
     def refresh_iou_thres(self, value):
+        """
+        刷新IOU阈值函数,作为horizontalSlider_2.valueChanged()信号的槽函数,其值改变时刷新iou_thres
+        """
         global iou_thres
         iou_thres = value
 
     def refresh_detect_frequency(self, value):
+        """
+        刷新检测频率函数,作为spinBox.valueChanged()信号的槽函数,其值改变时刷新detect_frequency
+        """
         global detect_frequency
         detect_frequency = value
 
     def refresh_fps(self, value):
+        """
+        刷新输出帧率函数,作为spinBox_2.valueChanged()信号的槽函数,其值改变时刷新fps
+        """
         global fps
         fps = value
 
     def detect(self):
-        global model
+        """
+        检测函数,包括图片检测、视频检测、实时检测三个部分；
+        检测部分均以多线程的方式进行。
+        """
         global quit_flag
 
         # 图片检测
         if self.radioButton.isChecked() == 1:
-            self.label_10.setVisible(0)
-            self.label_11.setVisible(0)
             self.image_thread = ImageDetectThread()
             self.image_thread.signal.connect(self.display)
             self.image_thread.signal2.connect(self.print_ifo)
@@ -118,8 +155,6 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         elif self.radioButton_2.isChecked() == 1:
             # 每次检测前先重置一下quit_flag，防止因为被修改为1而无法正常检测
             quit_flag = 0
-            self.label_10.setVisible(0)
-            self.label_11.setVisible(0)
             self.video_thread = VideoDetectThread()
             self.video_thread.signal.connect(self.display)
             self.video_thread.signal2.connect(self.print_ifo)
@@ -130,8 +165,6 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         elif self.radioButton_3.isChecked() == 1:
             # 每次检测前先重置一下quit_flag，防止因为被修改为1而无法正常检测
             quit_flag = 0
-            self.label_10.setVisible(0)
-            self.label_11.setVisible(0)
             self.realtime_thread = RealtimeDetectThread()
             self.realtime_thread.signal.connect(self.display)
             self.realtime_thread.signal2.connect(self.print_ifo)
@@ -147,6 +180,7 @@ class ImageDetectThread(QThread):
 
     def run(self):
         global model, device_id, quit_flag, conf_thres, iou_thres
+
         # 初始化
         result_label = []  # 空字符串存储检测结果
         imgsz = 640
