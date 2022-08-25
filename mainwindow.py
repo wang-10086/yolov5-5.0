@@ -60,6 +60,9 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         print('模型加载完成')
 
     def display(self, img):
+        """
+        检测结果显示函数,接收来自子线程的检测结果图片,并加以显示
+        """
         # 对绘制后得到的结果进行加工处理
         img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)  # RGB to BGR
         img_result = QImage(img, img.shape[1], img.shape[0], img.shape[1] * 3, QImage.Format_RGB888)
