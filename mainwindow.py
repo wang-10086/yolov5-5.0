@@ -22,9 +22,9 @@ from utils.torch_utils import select_device, load_classifier, time_synchronized
 global model, device_id,  quit_flag, conf_thres, iou_thres, detect_frequency, fps
 """
 程序用到的全局变量：
-model:  检测用到的模型;
+model:  检测用到的模型,程序内无需更改;
 device_id:  检测设备,'0'、'1'、'2'表示使用0、1、2号GPU,'cpu'表示使用cpu检测
-quit_flag:  退出检测标志,为1时退出检测
+quit_flag:  退出检测标志,为1时退出检测,程序内无需更改
 conf_thres: 置信度阈值,程序内无需更改
 iou_thres:  IOU阈值,程序内无需更改
 detect_frequency:   检测频率,即每隔detect_frequency检测一次,程序内无需更改
