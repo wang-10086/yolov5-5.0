@@ -293,6 +293,7 @@ class LoadStreams:  # multiple IP or RTSP cameras
             thread = Thread(target=self.update, args=([i, cap]), daemon=True)
             print(f' success ({w}x{h} at {self.fps:.2f} FPS).')
             thread.start()
+            cap.release()   # 释放摄像头
         print('')  # newline
 
         # check for common shapes
