@@ -25,7 +25,11 @@ from utils.general import check_requirements, xyxy2xywh, xywh2xyxy, xywhn2xyxy, 
     resample_segments, clean_str
 from utils.torch_utils import torch_distributed_zero_first
 
+global quit_flag
+
+
 # Parameters
+quit_flag = 0
 help_url = 'https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data'
 img_formats = ['bmp', 'jpg', 'jpeg', 'png', 'tif', 'tiff', 'dng', 'webp', 'mpo']  # acceptable image suffixes
 vid_formats = ['mov', 'avi', 'mp4', 'mpg', 'mpeg', 'm4v', 'wmv', 'mkv']  # acceptable video suffixes
@@ -35,6 +39,11 @@ logger = logging.getLogger(__name__)
 for orientation in ExifTags.TAGS.keys():
     if ExifTags.TAGS[orientation] == 'Orientation':
         break
+
+
+def set_camera_quit(quit_status):
+    global quit_flag
+    quit_flag = quit_status
 
 
 def get_hash(files):
@@ -261,6 +270,8 @@ class LoadWebcam:  # for inference
 
 
 class LoadStreams:  # multiple IP or RTSP cameras
+    global quit_flag
+
     def __init__(self, sources='streams.txt', img_size=640, stride=32):
         self.mode = 'stream'
         self.img_size = img_size
@@ -292,7 +303,7 @@ class LoadStreams:  # multiple IP or RTSP cameras
             _, self.imgs[i] = cap.read()  # guarantee first frame
             thread = Thread(target=self.update, args=([i, cap]), daemon=True)
             print(f' success ({w}x{h} at {self.fps:.2f} FPS).')
-            thread.start()
+            thread.start()      # 这里有问题，线程无法结束
         print('')  # newline
 
         # check for common shapes
@@ -302,13 +313,19 @@ class LoadStreams:  # multiple IP or RTSP cameras
             print('WARNING: Different stream shapes detected. For optimal performance supply similarly-shaped streams.')
 
     def update(self, index, cap):
+        global quit_flag
         # Read next stream frame in a daemon thread
         n = 0
         while cap.isOpened():
             n += 1
             # _, self.imgs[index] = cap.read()
+            # 判断退出检测标志
+            if quit_flag:
+                quit_flag = 0
+                cap.release()
+                break
             cap.grab()
-            if n == 4:  # read every 4th frame
+            if n == 1:  # read every 4th frame
                 success, im = cap.retrieve()
                 self.imgs[index] = im if success else self.imgs[index] * 0
                 n = 0

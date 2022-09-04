@@ -13,7 +13,7 @@ from tkinter import filedialog
 
 from model_load import model_load
 from UiMainwindow import Ui_MainWindow
-from utils.datasets import LoadStreams, LoadImages
+from utils.datasets import LoadStreams, LoadImages, set_camera_quit
 from utils.general import check_img_size, check_requirements, check_imshow, non_max_suppression, apply_classifier, \
     scale_coords, xyxy2xywh, strip_optimizer, set_logging, increment_path
 from utils.plots import plot_one_box
@@ -108,6 +108,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         """
         global quit_flag
         quit_flag = 1
+        set_camera_quit(1)      # 将摄像头检测的退出标志quit_flag设为1
 
     def refresh_conf_thres(self, value):
         """
