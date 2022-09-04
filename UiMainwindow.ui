@@ -23,7 +23,7 @@
      <rect>
       <x>0</x>
       <y>0</y>
-      <width>280</width>
+      <width>311</width>
       <height>651</height>
      </rect>
     </property>
@@ -183,10 +183,10 @@
     <widget class="QLabel" name="label_6">
      <property name="geometry">
       <rect>
-       <x>10</x>
-       <y>423</y>
-       <width>251</width>
-       <height>101</height>
+       <x>20</x>
+       <y>460</y>
+       <width>271</width>
+       <height>141</height>
       </rect>
      </property>
      <property name="font">
@@ -208,12 +208,15 @@ border-color: rgb(0, 0, 0);</string>
      <property name="text">
       <string/>
      </property>
+     <property name="alignment">
+      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+     </property>
     </widget>
     <widget class="QLabel" name="label_7">
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>393</y>
+       <y>430</y>
        <width>91</width>
        <height>30</height>
       </rect>
@@ -232,7 +235,7 @@ border-color: rgb(0, 0, 0);</string>
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>260</y>
+       <y>310</y>
        <width>91</width>
        <height>30</height>
       </rect>
@@ -250,8 +253,8 @@ border-color: rgb(0, 0, 0);</string>
     <widget class="QWidget" name="layoutWidget">
      <property name="geometry">
       <rect>
-       <x>10</x>
-       <y>300</y>
+       <x>30</x>
+       <y>350</y>
        <width>259</width>
        <height>54</height>
       </rect>
@@ -357,32 +360,133 @@ border-color: rgb(0, 0, 0);</string>
       </item>
      </layout>
     </widget>
+    <widget class="QComboBox" name="comboBox">
+     <property name="geometry">
+      <rect>
+       <x>77</x>
+       <y>260</y>
+       <width>50</width>
+       <height>25</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>AcadEref</family>
+       <pointsize>10</pointsize>
+      </font>
+     </property>
+     <property name="currentIndex">
+      <number>0</number>
+     </property>
+     <item>
+      <property name="text">
+       <string>0</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>1</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>2</string>
+      </property>
+     </item>
+    </widget>
     <widget class="QLabel" name="label_9">
      <property name="geometry">
       <rect>
-       <x>100</x>
-       <y>530</y>
-       <width>71</width>
-       <height>71</height>
+       <x>10</x>
+       <y>260</y>
+       <width>60</width>
+       <height>20</height>
       </rect>
      </property>
+     <property name="font">
+      <font>
+       <family>Microsoft YaHei UI</family>
+       <pointsize>10</pointsize>
+      </font>
+     </property>
      <property name="text">
-      <string/>
+      <string>摄像头：</string>
      </property>
-     <property name="pixmap">
-      <pixmap resource="resource.qrc">:/pic/resource/dianzan.png</pixmap>
+    </widget>
+    <widget class="QLabel" name="label_10">
+     <property name="geometry">
+      <rect>
+       <x>150</x>
+       <y>260</y>
+       <width>75</width>
+       <height>20</height>
+      </rect>
      </property>
-     <property name="scaledContents">
-      <bool>true</bool>
+     <property name="font">
+      <font>
+       <family>Microsoft YaHei UI</family>
+       <pointsize>10</pointsize>
+      </font>
+     </property>
+     <property name="text">
+      <string>检测设备：</string>
+     </property>
+    </widget>
+    <widget class="QComboBox" name="comboBox_2">
+     <property name="geometry">
+      <rect>
+       <x>230</x>
+       <y>260</y>
+       <width>65</width>
+       <height>25</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>AcadEref</family>
+       <pointsize>10</pointsize>
+      </font>
+     </property>
+     <property name="currentIndex">
+      <number>0</number>
+     </property>
+     <item>
+      <property name="text">
+       <string>0</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>cpu</string>
+      </property>
+     </item>
+    </widget>
+    <widget class="QPushButton" name="pushButton_4">
+     <property name="geometry">
+      <rect>
+       <x>90</x>
+       <y>610</y>
+       <width>121</width>
+       <height>28</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>Microsoft YaHei</family>
+       <pointsize>10</pointsize>
+      </font>
+     </property>
+     <property name="text">
+      <string>更改权重文件</string>
      </property>
     </widget>
    </widget>
    <widget class="QFrame" name="frame_2">
     <property name="geometry">
      <rect>
-      <x>279</x>
+      <x>319</x>
       <y>0</y>
-      <width>921</width>
+      <width>881</width>
       <height>651</height>
      </rect>
     </property>
@@ -399,7 +503,7 @@ border-color: rgb(0, 0, 0);</string>
     <widget class="QLabel" name="label">
      <property name="geometry">
       <rect>
-       <x>30</x>
+       <x>20</x>
        <y>20</y>
        <width>840</width>
        <height>560</height>
@@ -415,7 +519,7 @@ border-color: rgb(0, 0, 0);</string>
     <widget class="QPushButton" name="pushButton">
      <property name="geometry">
       <rect>
-       <x>220</x>
+       <x>210</x>
        <y>610</y>
        <width>93</width>
        <height>28</height>
@@ -428,7 +532,7 @@ border-color: rgb(0, 0, 0);</string>
     <widget class="QPushButton" name="pushButton_2">
      <property name="geometry">
       <rect>
-       <x>570</x>
+       <x>560</x>
        <y>610</y>
        <width>93</width>
        <height>28</height>
@@ -441,7 +545,7 @@ border-color: rgb(0, 0, 0);</string>
     <widget class="QPushButton" name="pushButton_3">
      <property name="geometry">
       <rect>
-       <x>400</x>
+       <x>390</x>
        <y>610</y>
        <width>93</width>
        <height>28</height>
@@ -454,7 +558,7 @@ border-color: rgb(0, 0, 0);</string>
     <widget class="QProgressBar" name="progressBar">
      <property name="geometry">
       <rect>
-       <x>30</x>
+       <x>20</x>
        <y>585</y>
        <width>840</width>
        <height>14</height>
@@ -484,38 +588,6 @@ border-color: rgb(0, 0, 0);</string>
       <number>0</number>
      </property>
     </widget>
-   </widget>
-   <widget class="QLabel" name="label_10">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>650</y>
-      <width>41</width>
-      <height>41</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-    <property name="pixmap">
-     <pixmap resource="resource.qrc">:/pic/resource/profile_photo.jpg</pixmap>
-    </property>
-    <property name="scaledContents">
-     <bool>true</bool>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label_11">
-    <property name="geometry">
-     <rect>
-      <x>70</x>
-      <y>660</y>
-      <width>261</width>
-      <height>20</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">

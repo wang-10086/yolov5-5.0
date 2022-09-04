@@ -319,13 +319,15 @@ class LoadStreams:  # multiple IP or RTSP cameras
         while cap.isOpened():
             n += 1
             # _, self.imgs[index] = cap.read()
+
             # 判断退出检测标志
             if quit_flag:
                 quit_flag = 0
                 cap.release()
                 break
+
             cap.grab()
-            if n == 1:  # read every 4th frame
+            if n == 1:  # read every 1st frame
                 success, im = cap.retrieve()
                 self.imgs[index] = im if success else self.imgs[index] * 0
                 n = 0

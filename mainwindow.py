@@ -19,7 +19,7 @@ from utils.general import check_img_size, check_requirements, check_imshow, non_
 from utils.plots import plot_one_box
 from utils.torch_utils import select_device, load_classifier, time_synchronized
 
-global model, device_id,  quit_flag, conf_thres, iou_thres, detect_frequency, fps
+global model, weights, device_id, camera_id, quit_flag, conf_thres, iou_thres, detect_frequency, fps
 """
 程序用到的全局变量：
 model:  检测用到的模型,程序内无需更改;
@@ -42,17 +42,16 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         """
         程序初始化
         """
-        global model, device_id,  quit_flag, conf_thres, iou_thres, detect_frequency, fps
+        global model, weights, device_id, camera_id, quit_flag, conf_thres, iou_thres, detect_frequency, fps
 
         quit_flag = 0
-        weights = 'signal.pt'
+        weights = 'D:/python_project/object_detection/yolov5-u/yolov5-5.0/coco128.pt'
         device_id = '0'
+        camera_id = '0'
 
         # 界面初始化
         super(MyMainWindow, self).__init__(parent)
         self.setupUi(self)
-        self.label_10.setVisible(0)
-        self.label_11.setVisible(0)
 
         self.pushButton.clicked.connect(self.detect)
         self.pushButton_2.clicked.connect(self.quit)
@@ -60,6 +59,9 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         self.horizontalSlider_2.valueChanged.connect(self.refresh_iou_thres)
         self.spinBox.valueChanged.connect(self.refresh_detect_frequency)
         self.spinBox_2.valueChanged.connect(self.refresh_fps)
+        self.comboBox.currentTextChanged.connect(self.change_camera)
+        self.comboBox_2.currentTextChanged.connect(self.change_device)
+        self.pushButton_4.clicked.connect(self.change_weights)
 
         self.image_thread = None  # 初始化图片检测线程
         self.video_thread = None  # 初始化视频检测线程
@@ -138,6 +140,44 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         global fps
         fps = value
 
+    def change_camera(self, camera):
+        """
+        更改摄像头函数,作为comboBox.currentTextChanged()信号的槽函数,其值改变时改变camera_id
+        """
+        global camera_id
+
+        test_cap = cv2.VideoCapture(int(camera))        # 创建一个VideoCapture对象以测试摄像头能否正常调用
+        if test_cap is None or not test_cap.isOpened():
+            print('Warning: unable to open camera.')
+            test_cap.release()
+        else:
+            test_cap.release()
+            camera_id = camera
+            print('Switch camera successfully.')
+
+    def change_device(self, device):
+        global model, weights, device_id
+        device_id = device
+        model = model_load(weights, device=device_id)
+        print('设备切换成功,模型已重新加载')
+
+    def change_weights(self):
+        global model, device_id, weights
+
+        # 实例化打开文件窗口
+        root = tk.Tk()
+        root.withdraw()
+
+        try:
+            weights = filedialog.askopenfilename()
+            model = model_load(weights, device=device_id)
+            print('权重切换成功,模型已重新加载')
+
+        except FileNotFoundError:
+            print('请重新读取权重文件')
+
+        root.mainloop()
+
     def detect(self):
         """
         检测函数,包括图片检测、视频检测、实时检测三个部分；
@@ -166,6 +206,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         elif self.radioButton_3.isChecked() == 1:
             # 每次检测前先重置一下quit_flag，防止因为被修改为1而无法正常检测
             quit_flag = 0
+            set_camera_quit(0)
             self.realtime_thread = RealtimeDetectThread()
             self.realtime_thread.signal.connect(self.display)
             self.realtime_thread.signal2.connect(self.print_ifo)
@@ -411,7 +452,7 @@ class RealtimeDetectThread(QThread):
         super(RealtimeDetectThread, self).__init__(parent)
 
     def run(self):
-        global model, device_id, quit_flag, conf_thres, iou_thres, detect_frequency, fps
+        global model, device_id, camera_id, quit_flag, conf_thres, iou_thres, detect_frequency, fps
 
         # 初始化
         imgsz = 640
@@ -424,12 +465,9 @@ class RealtimeDetectThread(QThread):
             model.half()  # to FP16
 
         try:
-            # 文件读取
-            camera = '0'
-
             # Set Dataloader
             cudnn.benchmark = True  # set True to speed up constant image size inference
-            dataset = LoadStreams(camera, img_size=imgsz, stride=stride)
+            dataset = LoadStreams(camera_id, img_size=imgsz, stride=stride)
 
             # Get names and colors
             names = model.module.names if hasattr(model, 'module') else model.names
