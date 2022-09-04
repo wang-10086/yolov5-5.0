@@ -156,12 +156,18 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
             print('Switch camera successfully.')
 
     def change_device(self, device):
+        """
+        更改检测设备函数,作为comboBox_2.currentTextChanged()信号的槽函数,其值改变时改变device_id
+        """
         global model, weights, device_id
         device_id = device
         model = model_load(weights, device=device_id)
         print('设备切换成功,模型已重新加载')
 
     def change_weights(self):
+        """
+        更改权重文件函数,作为pushButton_4信号的槽函数,其值改变时改变权重文件weights
+        """
         global model, device_id, weights
 
         # 实例化打开文件窗口
