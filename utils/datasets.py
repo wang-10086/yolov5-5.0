@@ -303,7 +303,7 @@ class LoadStreams:  # multiple IP or RTSP cameras
             _, self.imgs[i] = cap.read()  # guarantee first frame
             thread = Thread(target=self.update, args=([i, cap]), daemon=True)
             print(f' success ({w}x{h} at {self.fps:.2f} FPS).')
-            thread.start()      # 这里有问题，线程无法结束
+            thread.start()
         print('')  # newline
 
         # check for common shapes

@@ -45,7 +45,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         global model, weights, device_id, camera_id, quit_flag, conf_thres, iou_thres, detect_frequency, fps
 
         quit_flag = 0
-        weights = 'D:/python_project/object_detection/yolov5-u/yolov5-5.0/coco128.pt'
+        weights = 'C:/Users/17262/Desktop/coco128.pt'
         device_id = '0'
         camera_id = '0'
 
