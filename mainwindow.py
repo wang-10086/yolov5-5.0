@@ -22,21 +22,22 @@ from utils.torch_utils import select_device, load_classifier, time_synchronized
 global model, weights, device_id, camera_id, quit_flag, conf_thres, iou_thres, detect_frequency, fps
 """
 程序用到的全局变量：
-model:  检测用到的模型,程序内无需更改;
+model:  检测用到的模型
+weights:    检测使用的权重文件
 device_id:  检测设备,'0'、'1'、'2'表示使用0、1、2号GPU,'cpu'表示使用cpu检测
-quit_flag:  退出检测标志,为1时退出检测,程序内无需更改
-conf_thres: 置信度阈值,程序内无需更改
-iou_thres:  IOU阈值,程序内无需更改
-detect_frequency:   检测频率,即每隔detect_frequency检测一次,程序内无需更改
-fps:    检测帧率,程序内无需更改
+camera_id:  摄像头编号,'0'、'1'分别表示0、1号摄像头
+quit_flag:  退出检测标志,为1时退出检测
+conf_thres: 置信度阈值
+iou_thres:  IOU阈值
+detect_frequency:   检测频率,即每隔detect_frequency检测一次
+fps:    检测帧率
 """
 
 
 class MyMainWindow(QMainWindow, Ui_MainWindow):
-    signal_1 = pyqtSignal(object)  # 接收信号,用于接收来自子线程的检测结果图片
-    signal_2 = pyqtSignal(object)  # 接收信号,用于接受来自子线程的检测结果数据
-    signal_3 = pyqtSignal(object)  # 发送信号,用于向子线程发送conf_thres
-    signal_4 = pyqtSignal(object)  # 发送信号,用于向子线程发送iou_thres
+    """
+    程序主界面部分
+    """
 
     def __init__(self, parent=None):
         """
@@ -45,28 +46,29 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         global model, weights, device_id, camera_id, quit_flag, conf_thres, iou_thres, detect_frequency, fps
 
         quit_flag = 0
-        weights = 'C:/Users/17262/Desktop/coco128.pt'
+        weights = 'coco128.pt'
         device_id = '0'
         camera_id = '0'
 
         # 界面初始化
         super(MyMainWindow, self).__init__(parent)
         self.setupUi(self)
-
         self.pushButton.clicked.connect(self.detect)
         self.pushButton_2.clicked.connect(self.quit)
+        self.pushButton_4.clicked.connect(self.change_weights)
         self.horizontalSlider.valueChanged.connect(self.refresh_conf_thres)
         self.horizontalSlider_2.valueChanged.connect(self.refresh_iou_thres)
         self.spinBox.valueChanged.connect(self.refresh_detect_frequency)
         self.spinBox_2.valueChanged.connect(self.refresh_fps)
         self.comboBox.currentTextChanged.connect(self.change_camera)
         self.comboBox_2.currentTextChanged.connect(self.change_device)
-        self.pushButton_4.clicked.connect(self.change_weights)
 
+        # 线程初始化
         self.image_thread = None  # 初始化图片检测线程
         self.video_thread = None  # 初始化视频检测线程
         self.realtime_thread = None     # 初始化实时检测线程
 
+        # 检测参数初始化
         conf_thres = self.horizontalSlider.value()
         iou_thres = self.horizontalSlider_2.value()
         detect_frequency = self.spinBox.value()
@@ -89,7 +91,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         self.label.setPixmap(map)
         self.label.setScaledContents(True)
 
-    def print_ifo(self, s):
+    def print_result(self, s):
         """
         检测结果输出函数,接收来自子线程的检测结果文本,并在label_6加以输出
         """
@@ -175,13 +177,14 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         root.withdraw()
 
         try:
-            weights = filedialog.askopenfilename()
+            weights = filedialog.askopenfilename(title='选择权重文件', filetypes=[('pt', '*.pt'), ('All files', '*')])
             model = model_load(weights, device=device_id)
             print('权重切换成功,模型已重新加载')
 
         except FileNotFoundError:
             print('请重新读取权重文件')
 
+        root.destroy()
         root.mainloop()
 
     def detect(self):
@@ -195,7 +198,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         if self.radioButton.isChecked() == 1:
             self.image_thread = ImageDetectThread()
             self.image_thread.signal.connect(self.display)
-            self.image_thread.signal2.connect(self.print_ifo)
+            self.image_thread.signal2.connect(self.print_result)
             self.image_thread.start()
 
         # 视频检测
@@ -204,7 +207,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
             quit_flag = 0
             self.video_thread = VideoDetectThread()
             self.video_thread.signal.connect(self.display)
-            self.video_thread.signal2.connect(self.print_ifo)
+            self.video_thread.signal2.connect(self.print_result)
             self.video_thread.signal3.connect(self.progress)
             self.video_thread.start()
 
@@ -212,10 +215,10 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         elif self.radioButton_3.isChecked() == 1:
             # 每次检测前先重置一下quit_flag，防止因为被修改为1而无法正常检测
             quit_flag = 0
-            set_camera_quit(0)
+            set_camera_quit(0)      # 将摄像头检测的datasets部分的quit_flag置为0,防止无法正常读取摄像头
             self.realtime_thread = RealtimeDetectThread()
             self.realtime_thread.signal.connect(self.display)
-            self.realtime_thread.signal2.connect(self.print_ifo)
+            self.realtime_thread.signal2.connect(self.print_result)
             self.realtime_thread.start()
 
 
@@ -246,8 +249,7 @@ class ImageDetectThread(QThread):
 
         try:
             # 文件读取
-            # image_path = QFileDialog.getOpenFileName(self, '选择图片', '.', 'Image files (*.jpg)')[0]
-            image_path = filedialog.askopenfilename()
+            image_path = filedialog.askopenfilename(title='选择图片', filetypes=[('Image', '*.jpg'), ('All files', '*')])
             if image_path == '':
                 raise FileNotFoundError  # 如果未选择文件，即video_path为空，则主动抛出异常
 
@@ -353,8 +355,7 @@ class VideoDetectThread(QThread):
 
         try:
             # 文件读取
-            video_path = filedialog.askopenfilename()
-            # video_path = 'C:/Users/17262/Desktop/test.mp4'
+            video_path = filedialog.askopenfilename(title='选择视频', filetypes=[('Video', '*.mp4'), ('All files', '*')])
             if video_path == '':
                 raise FileNotFoundError  # 如果未选择文件，即video_path为空，则主动抛出异常
 
