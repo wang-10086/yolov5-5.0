@@ -1,6 +1,6 @@
-from PyQt5.QtGui import QPixmap, QImage
+from PyQt5.QtGui import QPixmap, QImage, QIcon
 from PyQt5.QtWidgets import *
-from PyQt5.QtCore import QThread, pyqtSignal
+from PyQt5.QtCore import QThread, pyqtSignal, Qt
 
 import time
 import torch
@@ -11,6 +11,7 @@ import cv2
 import tkinter as tk
 from tkinter import filedialog
 
+from my_window_effect import WindowEffect
 from model_load import model_load
 from UiMainwindow import Ui_MainWindow
 from utils.datasets import LoadStreams, LoadImages, set_camera_quit
@@ -19,7 +20,7 @@ from utils.general import check_img_size, check_requirements, check_imshow, non_
 from utils.plots import plot_one_box
 from utils.torch_utils import select_device, load_classifier, time_synchronized
 
-global model, weights, device_id, camera_id, quit_flag, conf_thres, iou_thres, detect_frequency, fps
+global model, weights, device_id, camera_id, quit_flag, pause_flag, conf_thres, iou_thres, detect_frequency, fps
 """
 程序用到的全局变量：
 model:  检测用到的模型
@@ -27,6 +28,7 @@ weights:    检测使用的权重文件
 device_id:  检测设备,'0'、'1'、'2'表示使用0、1、2号GPU,'cpu'表示使用cpu检测
 camera_id:  摄像头编号,'0'、'1'分别表示0、1号摄像头
 quit_flag:  退出检测标志,为1时退出检测
+pause_flag: 暂停与恢复标志,为1时暂停检测,为0时恢复检测
 conf_thres: 置信度阈值
 iou_thres:  IOU阈值
 detect_frequency:   检测频率,即每隔detect_frequency检测一次
@@ -43,9 +45,10 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         """
         程序初始化
         """
-        global model, weights, device_id, camera_id, quit_flag, conf_thres, iou_thres, detect_frequency, fps
+        global model, weights, device_id, camera_id, quit_flag, pause_flag, conf_thres, iou_thres, detect_frequency, fps
 
         quit_flag = 0
+        pause_flag = 0
         weights = 'coco128.pt'
         device_id = '0'
         camera_id = '0'
@@ -53,8 +56,15 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         # 界面初始化
         super(MyMainWindow, self).__init__(parent)
         self.setupUi(self)
+        # self.windowEffect = WindowEffect()
+        # self.resize(1300, 800)
+        # self.setWindowFlags(Qt.FramelessWindowHint)
+        # # 必须用样式表使背景透明，别用 setAttribute(Qt.WA_TranslucentBackground)，不然界面会卡顿
+        # self.setStyleSheet("background:transparent")
+        # self.windowEffect.setAcrylicEffect(int(self.winId()))
         self.pushButton.clicked.connect(self.detect)
         self.pushButton_2.clicked.connect(self.quit)
+        self.pushButton_3.clicked.connect(self.pause)
         self.pushButton_4.clicked.connect(self.change_weights)
         self.horizontalSlider.valueChanged.connect(self.refresh_conf_thres)
         self.horizontalSlider_2.valueChanged.connect(self.refresh_iou_thres)
@@ -77,6 +87,10 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         # 加载模型
         model = model_load(weights, device=device_id)
         print('模型加载完成')
+
+    # def mousePressEvent(self, QMouseEvent):
+    #     """ 移动窗口 """
+    #     self.windowEffect.moveWindow(self.winId())
 
     def display(self, img):
         """
@@ -113,6 +127,19 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         global quit_flag
         quit_flag = 1
         set_camera_quit(1)      # 将摄像头检测的退出标志quit_flag设为1
+        self.pushButton_3.setIcon(QIcon(QPixmap('./resource/pause.png')))
+
+    def pause(self):
+        global pause_flag
+
+        if pause_flag == 1:
+            print("线程已恢复")
+            pause_flag = 0
+            self.pushButton_3.setIcon(QIcon(QPixmap('./resource/pause.png')))
+        else:
+            print("线程已挂起")
+            pause_flag = 1
+            self.pushButton_3.setIcon(QIcon(QPixmap('./resource/resume.png')))
 
     def refresh_conf_thres(self, value):
         """
@@ -192,7 +219,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         检测函数,包括图片检测、视频检测、实时检测三个部分；
         检测部分均以多线程的方式进行。
         """
-        global quit_flag
+        global quit_flag, pause_flag
 
         # 图片检测
         if self.radioButton.isChecked() == 1:
@@ -205,6 +232,8 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         elif self.radioButton_2.isChecked() == 1:
             # 每次检测前先重置一下quit_flag，防止因为被修改为1而无法正常检测
             quit_flag = 0
+            pause_flag = 0
+            self.pushButton_3.setIcon(QIcon(QPixmap('./resource/pause.png')))
             self.video_thread = VideoDetectThread()
             self.video_thread.signal.connect(self.display)
             self.video_thread.signal2.connect(self.print_result)
@@ -215,6 +244,8 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         elif self.radioButton_3.isChecked() == 1:
             # 每次检测前先重置一下quit_flag，防止因为被修改为1而无法正常检测
             quit_flag = 0
+            pause_flag = 0
+            self.pushButton_3.setIcon(QIcon(QPixmap('./resource/pause.png')))
             set_camera_quit(0)      # 将摄像头检测的datasets部分的quit_flag置为0,防止无法正常读取摄像头
             self.realtime_thread = RealtimeDetectThread()
             self.realtime_thread.signal.connect(self.display)
@@ -337,7 +368,7 @@ class VideoDetectThread(QThread):
         super(VideoDetectThread, self).__init__(parent)
 
     def run(self):
-        global model, device_id, quit_flag, conf_thres, iou_thres, detect_frequency, fps
+        global model, device_id, quit_flag, pause_flag, conf_thres, iou_thres, detect_frequency, fps
 
         # 初始化
         imgsz = 640
@@ -371,9 +402,17 @@ class VideoDetectThread(QThread):
             if device.type != 'cpu':
                 model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
             for path, img, im0s, vid_cap, current_frame, total_frame in dataset:
+
+                # 挂起与恢复线程
+                while pause_flag == 1:
+                    if quit_flag == 1:
+                        break
+                    self.sleep(1)
+
                 # 终止线程
                 if quit_flag == 1:
                     quit_flag = 0
+                    pause_flag = 0
                     print('已退出')
                     break
 
@@ -459,7 +498,7 @@ class RealtimeDetectThread(QThread):
         super(RealtimeDetectThread, self).__init__(parent)
 
     def run(self):
-        global model, device_id, camera_id, quit_flag, conf_thres, iou_thres, detect_frequency, fps
+        global model, device_id, camera_id, quit_flag, pause_flag, conf_thres, iou_thres, detect_frequency, fps
 
         # 初始化
         imgsz = 640
@@ -484,9 +523,17 @@ class RealtimeDetectThread(QThread):
             if device.type != 'cpu':
                 model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
             for path, img, im0s, vid_cap in dataset:
+
+                # 挂起与恢复线程
+                while pause_flag == 1:
+                    if quit_flag == 1:
+                        break
+                    self.sleep(1)
+
                 # 终止线程
                 if quit_flag == 1:
                     quit_flag = 0
+                    pause_flag = 0
                     print('已退出')
                     break
 

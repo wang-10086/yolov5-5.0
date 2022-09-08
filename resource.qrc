@@ -1,5 +1,9 @@
 <RCC>
   <qresource prefix="pic">
+    <file>resource/pause.png</file>
+    <file>resource/quit.png</file>
+    <file>resource/resume.png</file>
+    <file>resource/start.png</file>
     <file>resource/profile_photo.jpg</file>
     <file>resource/dianzan.png</file>
     <file>resource/camera.png</file>
