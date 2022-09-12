@@ -1,6 +1,8 @@
-from PyQt5.QtGui import QPixmap, QImage, QIcon
+import os.path
+
+from PyQt5.QtGui import QPixmap, QImage, QIcon, QMouseEvent, QCursor
 from PyQt5.QtWidgets import *
-from PyQt5.QtCore import QThread, pyqtSignal, Qt
+from PyQt5.QtCore import QThread, pyqtSignal, Qt, QPoint
 
 import time
 import torch
@@ -56,12 +58,17 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         # 界面初始化
         super(MyMainWindow, self).__init__(parent)
         self.setupUi(self)
+        self.setContentsMargins(0, 0, 0, 0)
+        self.label_14.setText(weights)
+        self.label_15.setText('GPU[0]')
+
         # self.windowEffect = WindowEffect()
         # self.resize(1300, 800)
         # self.setWindowFlags(Qt.FramelessWindowHint)
         # # 必须用样式表使背景透明，别用 setAttribute(Qt.WA_TranslucentBackground)，不然界面会卡顿
         # self.setStyleSheet("background:transparent")
         # self.windowEffect.setAcrylicEffect(int(self.winId()))
+
         self.pushButton.clicked.connect(self.detect)
         self.pushButton_2.clicked.connect(self.quit)
         self.pushButton_3.clicked.connect(self.pause)
@@ -86,6 +93,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
 
         # 加载模型
         model = model_load(weights, device=device_id)
+        self.print_ifo('模型加载完成')
         print('模型加载完成')
 
     # def mousePressEvent(self, QMouseEvent):
@@ -111,6 +119,12 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         """
         self.label_6.setText(s)
 
+    def print_ifo(self, s):
+        """
+        状态信息输出函数,在label_16加以输出
+        """
+        self.label_16.setText(s)
+
     def progress(self, progress):
         """
         进度条处理函数,接收视频检测子线程传回的当前帧和总帧数,在progressBar上实时显示处理进度
@@ -130,14 +144,17 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         self.pushButton_3.setIcon(QIcon(QPixmap('./resource/pause.png')))
 
     def pause(self):
+        """
+        暂停与恢复函数,将pause_flag置为1或0从而实现检测子线程挂起与恢复
+        """
         global pause_flag
 
         if pause_flag == 1:
-            print("线程已恢复")
+            self.print_ifo("线程已恢复")
             pause_flag = 0
             self.pushButton_3.setIcon(QIcon(QPixmap('./resource/pause.png')))
         else:
-            print("线程已挂起")
+            self.print_ifo("线程已挂起")
             pause_flag = 1
             self.pushButton_3.setIcon(QIcon(QPixmap('./resource/resume.png')))
 
@@ -177,11 +194,13 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
 
         test_cap = cv2.VideoCapture(int(camera))        # 创建一个VideoCapture对象以测试摄像头能否正常调用
         if test_cap is None or not test_cap.isOpened():
+            self.print_ifo('打不开这个摄像头')
             print('Warning: unable to open camera.')
             test_cap.release()
         else:
             test_cap.release()
             camera_id = camera
+            self.print_ifo('切换摄像头成功')
             print('Switch camera successfully.')
 
     def change_device(self, device):
@@ -191,6 +210,12 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         global model, weights, device_id
         device_id = device
         model = model_load(weights, device=device_id)
+        if device_id == 'cpu':
+            device_name = 'CPU'
+        else:
+            device_name = 'GPU['+device_id+']'
+        self.label_15.setText(device_name)
+        self.print_ifo('设备切换成功,模型已重新加载')
         print('设备切换成功,模型已重新加载')
 
     def change_weights(self):
@@ -206,9 +231,13 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         try:
             weights = filedialog.askopenfilename(title='选择权重文件', filetypes=[('pt', '*.pt'), ('All files', '*')])
             model = model_load(weights, device=device_id)
+            weights_name = os.path.basename(weights)
+            self.label_14.setText(weights_name)
+            self.print_ifo('权重切换成功,模型已重新加载')
             print('权重切换成功,模型已重新加载')
 
         except FileNotFoundError:
+            self.print_ifo('请重新读取权重文件')
             print('请重新读取权重文件')
 
         root.destroy()
