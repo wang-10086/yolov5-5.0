@@ -403,6 +403,7 @@ class VideoDetectThread(QThread):
         imgsz = 640
         device = select_device(device_id)  # 设置设备
         half = device.type != 'cpu'  # 有CUDA支持时使用半精度
+        time_log = []   # 储存每帧的检测时间
 
         # 实例化打开文件窗口
         root = tk.Tk()
@@ -500,7 +501,9 @@ class VideoDetectThread(QThread):
                 # Print time (inference + NMS)
                 print(f'{s}Inference+NMS:({t2 - t1:.3f}s)')
                 print(f'总用时({t3 - t0:.3f}s)')
+                time_log.append(t3-t0)
 
+            print(f'平均每帧用时({sum(time_log) / len(time_log):.3f}s)')
             root.mainloop()
 
         except FileNotFoundError:
