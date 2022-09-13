@@ -40,7 +40,7 @@ fps:    检测帧率
 
 class MyMainWindow(QMainWindow, Ui_MainWindow):
     """
-    程序主界面部分
+    程序主界面部分。
     """
 
     def __init__(self, parent=None):
