@@ -1,5 +1,6 @@
 import os.path
 
+import numpy as np
 from PyQt5.QtGui import QPixmap, QImage, QIcon, QMouseEvent, QCursor
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import QThread, pyqtSignal, Qt, QPoint
@@ -49,6 +50,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         """
         global model, weights, device_id, camera_id, quit_flag, pause_flag, conf_thres, iou_thres, detect_frequency, fps
 
+        # 全局变量初始化
         quit_flag = 0
         pause_flag = 0
         weights = 'coco128.pt'
@@ -58,21 +60,24 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         # 界面初始化
         super(MyMainWindow, self).__init__(parent)
         self.setupUi(self)
+        self.setWindowFlags(Qt.CustomizeWindowHint)     # 去除标题栏
         self.setContentsMargins(0, 0, 0, 0)
         self.label_14.setText(weights)
         self.label_15.setText('GPU[0]')
-
+        # # 亚克力效果,实现窗口磨砂
         # self.windowEffect = WindowEffect()
-        # self.resize(1300, 800)
+        # self.resize(1300, 720)
         # self.setWindowFlags(Qt.FramelessWindowHint)
         # # 必须用样式表使背景透明，别用 setAttribute(Qt.WA_TranslucentBackground)，不然界面会卡顿
         # self.setStyleSheet("background:transparent")
         # self.windowEffect.setAcrylicEffect(int(self.winId()))
-
         self.pushButton.clicked.connect(self.detect)
         self.pushButton_2.clicked.connect(self.quit)
         self.pushButton_3.clicked.connect(self.pause)
         self.pushButton_4.clicked.connect(self.change_weights)
+        self.pushButton_5.clicked.connect(self.history_clear)
+        self.pushButton_6.clicked.connect(self.close)
+        self.pushButton_7.clicked.connect(self.showMinimized)
         self.horizontalSlider.valueChanged.connect(self.refresh_conf_thres)
         self.horizontalSlider_2.valueChanged.connect(self.refresh_iou_thres)
         self.spinBox.valueChanged.connect(self.refresh_detect_frequency)
@@ -80,10 +85,17 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         self.comboBox.currentTextChanged.connect(self.change_camera)
         self.comboBox_2.currentTextChanged.connect(self.change_device)
 
+        # 鼠标参数实例初始化
+        self.origin_y = None
+        self.origin_x = None
+        self.mouse_Y = None
+        self.mouse_X = None
+        self.move_flag = None
+
         # 线程初始化
         self.image_thread = None  # 初始化图片检测线程
         self.video_thread = None  # 初始化视频检测线程
-        self.realtime_thread = None     # 初始化实时检测线程
+        self.realtime_thread = None  # 初始化实时检测线程
 
         # 检测参数初始化
         conf_thres = self.horizontalSlider.value()
@@ -91,18 +103,45 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         detect_frequency = self.spinBox.value()
         fps = self.spinBox_2.value()
 
-        # 加载模型
+        # 模型初始化
         model = model_load(weights, device=device_id)
         self.print_ifo('模型加载完成')
         print('模型加载完成')
 
-    # def mousePressEvent(self, QMouseEvent):
-    #     """ 移动窗口 """
-    #     self.windowEffect.moveWindow(self.winId())
+    def mousePressEvent(self, evt):
+        """
+        鼠标按压事件，确定两个点的位置(鼠标第一次按下的点以及窗口当前所在的原始点)，其中:
+        mouse_X 和 mouse_Y是鼠标按下的点，相对于整个桌面而言;
+        origin_x 和 origin_y是窗口左上角的点位置，也是相对于整个桌面而言。
+        """
+        self.move_flag = True
+        self.mouse_X = evt.globalX()
+        self.mouse_Y = evt.globalY()
+        self.origin_x = self.x()
+        self.origin_y = self.y()
+
+    def mouseMoveEvent(self, evt):
+        """
+        鼠标移动事件:
+        evt.globalX()和evt.globalY()是鼠标实时位置，由此可以计算出窗口需要移动的距离move_x 和 move_y，
+        最终得出窗口移动目标点位置des_x 和 des_y
+        """
+        if self.move_flag:
+            move_x = evt.globalX() - self.mouse_X
+            move_y = evt.globalY() - self.mouse_Y
+            des_x = self.origin_x + move_x
+            des_y = self.origin_y + move_y
+            self.move(des_x, des_y)
+
+    def mouseReleaseEvent(self, QMouseEvent):
+        """
+        鼠标释放事件，将self.move_flag置为False
+        """
+        self.move_flag = False
 
     def display(self, img):
         """
-        检测结果显示函数,接收来自子线程的检测结果图片,并在label加以显示
+        检测结果显示函数，接收来自子线程的检测结果图片，并在label加以显示
         """
         # 对绘制后得到的结果进行加工处理
         img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)  # RGB to BGR
@@ -115,19 +154,19 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
 
     def print_result(self, s):
         """
-        检测结果输出函数,接收来自子线程的检测结果文本,并在label_6加以输出
+        检测结果输出函数，接收来自子线程的检测结果文本，并在label_6加以输出
         """
         self.label_6.setText(s)
 
     def print_ifo(self, s):
         """
-        状态信息输出函数,在label_16加以输出
+        状态信息输出函数，在label_16加以输出
         """
         self.label_16.setText(s)
 
     def progress(self, progress):
         """
-        进度条处理函数,接收视频检测子线程传回的当前帧和总帧数,在progressBar上实时显示处理进度
+        进度条处理函数，接收视频检测子线程传回的当前帧和总帧数，在progressBar上实时显示处理进度
         """
         current_frame = progress[0]
         total_frame = progress[1]
@@ -136,16 +175,16 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
 
     def quit(self):
         """
-        退出检测函数,将quit_flag设为1,使得视频检测子线程或实时检测子线程终止
+        退出检测函数，将quit_flag设为1，使得视频检测子线程或实时检测子线程终止
         """
         global quit_flag
         quit_flag = 1
-        set_camera_quit(1)      # 将摄像头检测的退出标志quit_flag设为1
+        set_camera_quit(1)  # 将摄像头检测的退出标志quit_flag设为1
         self.pushButton_3.setIcon(QIcon(QPixmap('./resource/pause.png')))
 
     def pause(self):
         """
-        暂停与恢复函数,将pause_flag置为1或0从而实现检测子线程挂起与恢复
+        暂停与恢复函数，将pause_flag置为1或0从而实现检测子线程挂起与恢复
         """
         global pause_flag
 
@@ -157,6 +196,14 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
             self.print_ifo("线程已挂起")
             pause_flag = 1
             self.pushButton_3.setIcon(QIcon(QPixmap('./resource/resume.png')))
+
+    def history_clear(self):
+        """
+        清空上次检测的历史记录，包括显示画面、检测结果文本框和进度条
+        """
+        self.label.setPixmap(QPixmap(""))
+        self.label_6.clear()
+        self.progressBar.setValue(0)
 
     def refresh_conf_thres(self, value):
         """
@@ -192,7 +239,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         """
         global camera_id
 
-        test_cap = cv2.VideoCapture(int(camera))        # 创建一个VideoCapture对象以测试摄像头能否正常调用
+        test_cap = cv2.VideoCapture(int(camera))  # 创建一个VideoCapture对象以测试摄像头能否正常调用
         if test_cap is None or not test_cap.isOpened():
             self.print_ifo('打不开这个摄像头')
             print('Warning: unable to open camera.')
@@ -213,7 +260,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         if device_id == 'cpu':
             device_name = 'CPU'
         else:
-            device_name = 'GPU['+device_id+']'
+            device_name = 'GPU[' + device_id + ']'
         self.label_15.setText(device_name)
         self.print_ifo('设备切换成功,模型已重新加载')
         print('设备切换成功,模型已重新加载')
@@ -275,7 +322,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
             quit_flag = 0
             pause_flag = 0
             self.pushButton_3.setIcon(QIcon(QPixmap('./resource/pause.png')))
-            set_camera_quit(0)      # 将摄像头检测的datasets部分的quit_flag置为0,防止无法正常读取摄像头
+            set_camera_quit(0)  # 将摄像头检测的datasets部分的quit_flag置为0,防止无法正常读取摄像头
             self.realtime_thread = RealtimeDetectThread()
             self.realtime_thread.signal.connect(self.display)
             self.realtime_thread.signal2.connect(self.print_result)
@@ -283,8 +330,8 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
 
 
 class ImageDetectThread(QThread):
-    _signal = pyqtSignal(object)        # 发送信号,用于向主线程发送检测结果图片
-    _signal2 = pyqtSignal(object)       # 发送信号,用于向主线程发送检测结果数据
+    _signal = pyqtSignal(object)  # 发送信号,用于向主线程发送检测结果图片
+    _signal2 = pyqtSignal(object)  # 发送信号,用于向主线程发送检测结果数据
 
     def __init__(self, parent=None):
         super(ImageDetectThread, self).__init__(parent)
@@ -337,7 +384,7 @@ class ImageDetectThread(QThread):
                 pred = model(img, augment=True)[0]  # augment默认为True,后续可根据要求更改
 
                 # Apply NMS
-                pred = non_max_suppression(pred, conf_thres/100, iou_thres/100, classes=None,
+                pred = non_max_suppression(pred, conf_thres / 100, iou_thres / 100, classes=None,
                                            agnostic=False)
                 t2 = time_synchronized()
 
@@ -403,7 +450,7 @@ class VideoDetectThread(QThread):
         imgsz = 640
         device = select_device(device_id)  # 设置设备
         half = device.type != 'cpu'  # 有CUDA支持时使用半精度
-        time_log = []   # 储存每帧的检测时间
+        time_log = []  # 储存每帧的检测时间
 
         # 实例化打开文件窗口
         root = tk.Tk()
@@ -501,7 +548,7 @@ class VideoDetectThread(QThread):
                 # Print time (inference + NMS)
                 print(f'{s}Inference+NMS:({t2 - t1:.3f}s)')
                 print(f'总用时({t3 - t0:.3f}s)')
-                time_log.append(t3-t0)
+                time_log.append(t3 - t0)
 
             print(f'平均每帧用时({sum(time_log) / len(time_log):.3f}s)')
             root.mainloop()
@@ -639,5 +686,6 @@ class RealtimeDetectThread(QThread):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     mywin = MyMainWindow()
+    mywin.setMouseTracking(True)
     mywin.show()
     sys.exit(app.exec_())
