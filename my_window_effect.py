@@ -1,10 +1,9 @@
 # coding:utf-8
 
-from ctypes import POINTER, c_bool, sizeof, windll,pointer,c_int
+from ctypes import POINTER, c_bool, sizeof, windll, pointer, c_int
+from ctypes import POINTER, Structure
 from ctypes.wintypes import DWORD, HWND, ULONG
-
-from win32 import win32api, win32gui
-from win32.lib import win32con
+from enum import Enum
 
 
 class WindowEffect():
@@ -43,7 +42,7 @@ class WindowEffect():
         """
         # 亚克力混合色
         gradientColor = gradientColor[6:] + gradientColor[4:6] + \
-            gradientColor[2:4] + gradientColor[:2]
+                        gradientColor[2:4] + gradientColor[:2]
         gradientColor = DWORD(int(gradientColor, base=16))
         # 磨砂动画
         animationId = DWORD(animationId)
@@ -69,24 +68,20 @@ class WindowEffect():
         # 开启Aero
         self.SetWindowCompositionAttribute(hWnd, pointer(self.winCompAttrData))
 
-    def moveWindow(self, hWnd: int):
-        """ 移动窗口
+    # def moveWindow(self, hWnd: int):
+    #     """ 移动窗口
+    #
+    #     Parameter
+    #     ----------
+    #     hWnd: int or `sip.voidptr`
+    #         窗口句柄
+    #     """
+    #     win32gui.ReleaseCapture()
+    #     win32api.SendMessage(hWnd, win32con.WM_SYSCOMMAND,
+    #                 win32con.SC_MOVE + win32con.HTCAPTION, 0)
 
-        Parameter
-        ----------
-        hWnd: int or `sip.voidptr`
-            窗口句柄
-        """
-        win32gui.ReleaseCapture()
-        win32api.SendMessage(hWnd, win32con.WM_SYSCOMMAND,
-                    win32con.SC_MOVE + win32con.HTCAPTION, 0)
 
 # coding:utf-8
-
-from ctypes import POINTER, Structure
-from ctypes.wintypes import DWORD, HWND, ULONG
-from enum import Enum
-
 
 class WINDOWCOMPOSITIONATTRIB(Enum):
     WCA_UNDEFINED = 0,
@@ -120,25 +115,24 @@ class ACCENT_STATE(Enum):
     ACCENT_DISABLED = 0,
     ACCENT_ENABLE_GRADIENT = 1,
     ACCENT_ENABLE_TRANSPARENTGRADIENT = 2,
-    ACCENT_ENABLE_BLURBEHIND = 3,          # Aero效果
-    ACCENT_ENABLE_ACRYLICBLURBEHIND = 4,   # 亚克力效果
+    ACCENT_ENABLE_BLURBEHIND = 3,  # Aero效果
+    ACCENT_ENABLE_ACRYLICBLURBEHIND = 4,  # 亚克力效果
     ACCENT_INVALID_STATE = 5
 
 
 class ACCENT_POLICY(Structure):
     """ 设置客户区的具体属性 """
     _fields_ = [
-        ('AccentState',   DWORD),
-        ('AccentFlags',   DWORD),
+        ('AccentState', DWORD),
+        ('AccentFlags', DWORD),
         ('GradientColor', DWORD),
-        ('AnimationId',   DWORD),
+        ('AnimationId', DWORD),
     ]
 
 
 class WINDOWCOMPOSITIONATTRIBDATA(Structure):
     _fields_ = [
-        ('Attribute',  DWORD),
-        ('Data',       POINTER(ACCENT_POLICY)), # POINTER()接收任何ctypes类型，并返回一个指针类型
+        ('Attribute', DWORD),
+        ('Data', POINTER(ACCENT_POLICY)),  # POINTER()接收任何ctypes类型，并返回一个指针类型
         ('SizeOfData', ULONG),
     ]
-

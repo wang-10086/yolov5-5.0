@@ -64,13 +64,14 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         self.setContentsMargins(0, 0, 0, 0)
         self.label_14.setText(weights)
         self.label_15.setText('GPU[0]')
-        # # 亚克力效果,实现窗口磨砂
-        # self.windowEffect = WindowEffect()
-        # self.resize(1300, 720)
-        # self.setWindowFlags(Qt.FramelessWindowHint)
-        # # 必须用样式表使背景透明，别用 setAttribute(Qt.WA_TranslucentBackground)，不然界面会卡顿
-        # self.setStyleSheet("background:transparent")
-        # self.windowEffect.setAcrylicEffect(int(self.winId()))
+        # 亚克力效果,实现窗口磨砂
+        self.windowEffect = WindowEffect()
+        self.resize(1300, 720)
+        self.setWindowFlags(Qt.FramelessWindowHint)
+        # 必须用样式表使背景透明，别用 setAttribute(Qt.WA_TranslucentBackground)，不然界面会卡顿
+        self.setStyleSheet("background:transparent")
+        self.windowEffect.setAcrylicEffect(int(self.winId()))
+
         self.pushButton.clicked.connect(self.detect)
         self.pushButton_2.clicked.connect(self.quit)
         self.pushButton_3.clicked.connect(self.pause)
