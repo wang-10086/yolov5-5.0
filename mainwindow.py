@@ -28,14 +28,15 @@ global model, weights, device_id, camera_id, quit_flag, pause_flag, conf_thres, 
 程序用到的全局变量：
 model:  检测用到的模型
 weights:    检测使用的权重文件
-device_id:  检测设备,'0'、'1'、'2'表示使用0、1、2号GPU,'cpu'表示使用cpu检测
-camera_id:  摄像头编号,'0'、'1'分别表示0、1号摄像头
-quit_flag:  退出检测标志,为1时退出检测
-pause_flag: 暂停与恢复标志,为1时暂停检测,为0时恢复检测
+device_id:  检测设备，'0'、'1'、'2'表示使用0、1、2号GPU，'cpu'表示使用cpu检测
+camera_id:  摄像头编号，'0'、'1'分别表示0、1号摄像头
+quit_flag:  退出检测标志，为1时退出检测
+pause_flag: 暂停与恢复标志，为1时暂停检测,为0时恢复检测
 conf_thres: 置信度阈值
 iou_thres:  IOU阈值
-detect_frequency:   检测频率,即每隔detect_frequency检测一次
+detect_frequency:   检测频率，即每隔detect_frequency检测一次
 fps:    检测帧率
+play_speed: 播放倍速，最高支持8倍速
 """
 
 
