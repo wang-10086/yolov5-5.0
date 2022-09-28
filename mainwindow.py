@@ -23,7 +23,7 @@ from utils.general import check_img_size, check_requirements, check_imshow, non_
 from utils.plots import plot_one_box
 from utils.torch_utils import select_device, load_classifier, time_synchronized
 
-global model, weights, device_id, camera_id, quit_flag, pause_flag, conf_thres, iou_thres, detect_frequency, fps
+global model, weights, device_id, camera_id, quit_flag, pause_flag, conf_thres, iou_thres, detect_frequency, fps, play_speed
 """
 程序用到的全局变量：
 model:  检测用到的模型
@@ -48,7 +48,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         """
         程序初始化
         """
-        global model, weights, device_id, camera_id, quit_flag, pause_flag, conf_thres, iou_thres, detect_frequency, fps
+        global model, weights, device_id, camera_id, quit_flag, pause_flag, conf_thres, iou_thres, detect_frequency, fps, play_speed
 
         # 全局变量初始化
         quit_flag = 0
@@ -56,6 +56,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         weights = 'coco128.pt'
         device_id = '0'
         camera_id = '0'
+        play_speed = 1
 
         # 界面初始化
         super(MyMainWindow, self).__init__(parent)
@@ -198,6 +199,28 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
             pause_flag = 1
             self.pushButton_3.setIcon(QIcon(QPixmap('./resource/resume.png')))
 
+    def speedup(self):
+        """
+        加速播放函数，最高支持8倍速
+        """
+        global play_speed
+
+        if 1 < play_speed < 8:     # 最高支持8倍速
+            play_speed = play_speed + 1
+        else:
+            self.print_ifo('已达到最大播放速度')
+
+    def slowdown(self):
+        """
+        减速播放函数，最高支持8倍速
+        """
+        global play_speed
+
+        if 1 < play_speed < 8:      # 最高支持8倍速
+            play_speed = play_speed - 1
+        else:
+            self.print_ifo('已达到最小播放速度')
+
     def history_clear(self):
         """
         清空上次检测的历史记录，包括显示画面、检测结果文本框和进度条
@@ -296,7 +319,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         检测函数,包括图片检测、视频检测、实时检测三个部分；
         检测部分均以多线程的方式进行。
         """
-        global quit_flag, pause_flag
+        global quit_flag, pause_flag, play_speed
 
         # 图片检测
         if self.radioButton.isChecked() == 1:
@@ -310,6 +333,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
             # 每次检测前先重置一下quit_flag，防止因为被修改为1而无法正常检测
             quit_flag = 0
             pause_flag = 0
+            play_speed = 1  # 重置播放速度为1倍速
             self.pushButton_3.setIcon(QIcon(QPixmap('./resource/pause.png')))
             self.video_thread = VideoDetectThread()
             self.video_thread.signal.connect(self.display)
@@ -445,7 +469,7 @@ class VideoDetectThread(QThread):
         super(VideoDetectThread, self).__init__(parent)
 
     def run(self):
-        global model, device_id, quit_flag, pause_flag, conf_thres, iou_thres, detect_frequency, fps
+        global model, device_id, quit_flag, pause_flag, conf_thres, iou_thres, detect_frequency, fps, play_speed
 
         # 初始化
         imgsz = 640
@@ -494,62 +518,64 @@ class VideoDetectThread(QThread):
                     print('已退出')
                     break
 
-                t0 = time.time()  # 每帧开始检测时间
-                result_label = []
-                img = torch.from_numpy(img).to(device)
-                img = img.half() if half else img.float()  # uint8 to fp16/32
-                img /= 255.0  # 0 - 255 to 0.0 - 1.0
-                if img.ndimension() == 3:
-                    img = img.unsqueeze(0)
+                # 按倍速进行播放
+                if current_frame % play_speed == 0:
+                    t0 = time.time()  # 每帧开始检测时间
+                    result_label = []
+                    img = torch.from_numpy(img).to(device)
+                    img = img.half() if half else img.float()  # uint8 to fp16/32
+                    img /= 255.0  # 0 - 255 to 0.0 - 1.0
+                    if img.ndimension() == 3:
+                        img = img.unsqueeze(0)
 
-                # Inference
-                t1 = time_synchronized()
-                pred = model(img, augment=True)[0]  # augment默认为True,后续可根据要求更改
+                    # Inference
+                    t1 = time_synchronized()
+                    pred = model(img, augment=True)[0]  # augment默认为True,后续可根据要求更改
 
-                # Apply NMS
-                pred = non_max_suppression(pred, conf_thres / 100, iou_thres / 100, classes=None,
-                                           agnostic=False)
-                t2 = time_synchronized()
+                    # Apply NMS
+                    pred = non_max_suppression(pred, conf_thres / 100, iou_thres / 100, classes=None,
+                                               agnostic=False)
+                    t2 = time_synchronized()
 
-                # Process detections
-                for i, det in enumerate(pred):  # detections per image
-                    p, s, im0, frame = path, '', im0s, getattr(dataset, 'frame', 0)
+                    # Process detections
+                    for i, det in enumerate(pred):  # detections per image
+                        p, s, im0, frame = path, '', im0s, getattr(dataset, 'frame', 0)
 
-                    s += '%gx%g ' % img.shape[2:]  # print string
-                    gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
-                    if len(det):
-                        # Rescale boxes from img_size to im0 size
-                        det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
+                        s += '%gx%g ' % img.shape[2:]  # print string
+                        gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
+                        if len(det):
+                            # Rescale boxes from img_size to im0 size
+                            det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
 
-                        # Print results
-                        for c in det[:, -1].unique():
-                            n = (det[:, -1] == c).sum()  # detections per class
-                            s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
+                            # Print results
+                            for c in det[:, -1].unique():
+                                n = (det[:, -1] == c).sum()  # detections per class
+                                s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
 
-                        # Write results
-                        for *xyxy, conf, cls in reversed(det):
-                            label = f'{names[int(cls)]} {conf:.2f}'
-                            result_label.append(label)
-                            plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=3)
+                            # Write results
+                            for *xyxy, conf, cls in reversed(det):
+                                label = f'{names[int(cls)]} {conf:.2f}'
+                                result_label.append(label)
+                                plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=3)
 
-                self._signal.emit(im0)
+                    self._signal.emit(im0)
 
-                # 将检测结果的类别和置信度返回
-                s = ''  # 空字符串用于存储检测结果
-                for label in result_label:
-                    s = s + label + '\n'
-                self._signal2.emit(s)
-                self._signal3.emit([current_frame, total_frame])
+                    # 将检测结果的类别和置信度返回
+                    s = ''  # 空字符串用于存储检测结果
+                    for label in result_label:
+                        s = s + label + '\n'
+                    self._signal2.emit(s)
+                    self._signal3.emit([current_frame, total_frame])
 
-                # 延时程序，达到指定时间后进入下一循环
-                while time.time() - t0 < 1 / fps:
-                    time.sleep(0.0001)
+                    # 延时程序，达到指定时间后进入下一循环
+                    while time.time() - t0 < 1 / fps:
+                        time.sleep(0.0001)
 
-                t3 = time.time()  # 结束检测时间
-                # Print time (inference + NMS)
-                print(f'{s}Inference+NMS:({t2 - t1:.3f}s)')
-                print(f'总用时({t3 - t0:.3f}s)')
-                time_log.append(t3 - t0)
+                    t3 = time.time()  # 结束检测时间
+                    # Print time (inference + NMS)
+                    print(f'{s}Inference+NMS:({t2 - t1:.3f}s)')
+                    print(f'总用时({t3 - t0:.3f}s)')
+                    time_log.append(t3 - t0)
 
             print(f'平均每帧用时({sum(time_log) / len(time_log):.3f}s)')
             root.mainloop()
