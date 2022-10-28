@@ -82,6 +82,10 @@ python mainwindow.py
    在CPU Intel i5-9300H，GPU NVIDIA GeForce GTX 1650环境下，视频检测速度最高可达29s/帧。
 
 ## Maintainers
+@[Akkkk](https://github.com/wang-10086)
+@[ykxxx](https://github.com/ykxxxxxx)
+
+## Summary
 
 
 
