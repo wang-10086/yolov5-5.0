@@ -802,7 +802,7 @@ border-color: rgb(61, 61, 61);</string>
           </widget>
          </item>
          <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_7" stretch="2,2,2,2">
+          <layout class="QHBoxLayout" name="horizontalLayout_7" stretch="2,0,2,0,2,0">
            <property name="topMargin">
             <number>5</number>
            </property>
@@ -837,6 +837,23 @@ color: rgb(170, 0, 0);</string>
             </widget>
            </item>
            <item>
+            <widget class="QPushButton" name="pushButton_10">
+             <property name="maximumSize">
+              <size>
+               <width>30</width>
+               <height>30</height>
+              </size>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+             <property name="icon">
+              <iconset resource="resource.qrc">
+               <normaloff>:/pic/resource/backward.png</normaloff>:/pic/resource/backward.png</iconset>
+             </property>
+            </widget>
+           </item>
+           <item>
             <widget class="QPushButton" name="pushButton_3">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -855,6 +872,29 @@ color: rgb(170, 0, 0);</string>
              <property name="icon">
               <iconset resource="resource.qrc">
                <normaloff>:/pic/resource/pause.png</normaloff>:/pic/resource/pause.png</iconset>
+             </property>
+             <property name="iconSize">
+              <size>
+               <width>30</width>
+               <height>30</height>
+              </size>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="pushButton_9">
+             <property name="maximumSize">
+              <size>
+               <width>30</width>
+               <height>30</height>
+              </size>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+             <property name="icon">
+              <iconset resource="resource.qrc">
+               <normaloff>:/pic/resource/forward.png</normaloff>:/pic/resource/forward.png</iconset>
              </property>
              <property name="iconSize">
               <size>
