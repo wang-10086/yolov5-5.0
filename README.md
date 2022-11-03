@@ -41,7 +41,7 @@ python mainwindow.py
 > 注意：如果您的GPU算力有限，我们建议在使用本程序时不要使用其他程序占用GPU（如使用obs stdio进行录屏），否则会由于算力不足造成程序崩溃
 
 本项目包含图片检测、视频检测和摄像头实时检测三个功能模块，下面为项目演示视频：
-[铁路信号机视频自动识别与仿真系统演示视频](http://wang-typora.oss-cn-beijing.aliyuncs.com/img/铁路信号机视频自动识别仿真系统演示视频.mp4)
+[铁路信号机视频自动识别与仿真系统演示视频](http://wang-typora.oss-cn-beijing.aliyuncs.com/img/铁路信号机视频自动识别仿真系统演示视频（终）.mp4)
 
 ## Datasets
 
