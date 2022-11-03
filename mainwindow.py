@@ -79,8 +79,11 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         self.pushButton_3.clicked.connect(self.pause)
         self.pushButton_4.clicked.connect(self.change_weights)
         self.pushButton_5.clicked.connect(self.history_clear)
-        self.pushButton_6.clicked.connect(self.close)
-        self.pushButton_7.clicked.connect(self.showMinimized)
+        self.pushButton_6.clicked.connect(self.slowdown)
+        self.pushButton_7.clicked.connect(self.speedup)
+        self.pushButton_8.clicked.connect(self.close)
+        self.pushButton_9.clicked.connect(self.showMinimized)
+
         self.horizontalSlider.valueChanged.connect(self.refresh_conf_thres)
         self.horizontalSlider_2.valueChanged.connect(self.refresh_iou_thres)
         self.spinBox.valueChanged.connect(self.refresh_detect_frequency)
@@ -206,8 +209,9 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         """
         global play_speed
 
-        if 1 < play_speed < 8:     # 最高支持8倍速
+        if 1 <= play_speed < 8:     # 最高支持8倍速
             play_speed = play_speed + 1
+            self.print_ifo(str(play_speed) + '倍速')
         else:
             self.print_ifo('已达到最大播放速度')
 
@@ -217,8 +221,9 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         """
         global play_speed
 
-        if 1 < play_speed < 8:      # 最高支持8倍速
+        if 1 < play_speed <= 8:      # 最高支持8倍速
             play_speed = play_speed - 1
+            self.print_ifo(str(play_speed)+'倍速')
         else:
             self.print_ifo('已达到最小播放速度')
 
