@@ -48,7 +48,8 @@ python mainwindow.py
 受条件所限，我们选择使用道路信号灯来代替铁路信号机作为检测对象，通过道路信号灯的实地拍摄，以获得相应的数据集；
 
 1. 线路长度16.88km，包含35个路口，途经商业区、居民区、城郊开发区等多种场景，信号灯包含竖式、横式、立式、悬挂式、圆形、箭头、人形道等多种类别，经过剪辑得到一段时长12分03秒、完全由路口信号灯组成的行车视频：
-   <img src="http://wang-typora.oss-cn-beijing.aliyuncs.com/img/Snipaste_2022-06-13_20-32-14.jpg" style="zoom:70%;" />
+   
+   <img src="http://wang-typora.oss-cn-beijing.aliyuncs.com/img/Snipaste_2022-06-13_20-32-14.jpg" style="zoom:50%;" />
 2. 经过视频转图片操作后，得到共21712张图片，分辨率统一为1920*1080，在这21712张图片中我们筛选出了4000张图片作为数据集，数据集的标签构成如下；
 
    ```python
