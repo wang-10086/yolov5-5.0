@@ -54,7 +54,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         # 全局变量初始化
         quit_flag = 0
         pause_flag = 0
-        weights = 'coco128.pt'
+        weights = 'signal.pt'
         device_id = '0'
         camera_id = '0'
         play_speed = 1

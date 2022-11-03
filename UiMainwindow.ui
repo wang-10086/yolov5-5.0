@@ -31,6 +31,10 @@
   <property name="windowTitle">
    <string>信号机检测仿真系统</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="resource.qrc">
+    <normaloff>:/pic/resource/signal.png</normaloff>:/pic/resource/signal.png</iconset>
+  </property>
   <property name="windowOpacity">
    <double>1.000000000000000</double>
   </property>
@@ -42,6 +46,12 @@
   </property>
   <property name="styleSheet">
    <string notr="true"/>
+  </property>
+  <property name="iconSize">
+   <size>
+    <width>40</width>
+    <height>40</height>
+   </size>
   </property>
   <property name="tabShape">
    <enum>QTabWidget::Rounded</enum>
@@ -837,42 +847,6 @@ border-color: rgb(0, 0, 0);</string>
       <string>coco128.pt</string>
      </property>
     </widget>
-    <widget class="QLabel" name="label_12">
-     <property name="geometry">
-      <rect>
-       <x>940</x>
-       <y>0</y>
-       <width>91</width>
-       <height>20</height>
-      </rect>
-     </property>
-     <property name="font">
-      <font>
-       <family>Microsoft YaHei</family>
-      </font>
-     </property>
-     <property name="text">
-      <string>未进行检测</string>
-     </property>
-    </widget>
-    <widget class="QLabel" name="label_11">
-     <property name="geometry">
-      <rect>
-       <x>860</x>
-       <y>0</y>
-       <width>70</width>
-       <height>20</height>
-      </rect>
-     </property>
-     <property name="font">
-      <font>
-       <family>Microsoft YaHei</family>
-      </font>
-     </property>
-     <property name="text">
-      <string>正在检测：</string>
-     </property>
-    </widget>
     <widget class="QLabel" name="label_13">
      <property name="geometry">
       <rect>
@@ -952,7 +926,7 @@ border-color: rgb(0, 0, 0);</string>
     <widget class="QPushButton" name="pushButton_8">
      <property name="geometry">
       <rect>
-       <x>900</x>
+       <x>910</x>
        <y>0</y>
        <width>26</width>
        <height>26</height>
@@ -978,7 +952,7 @@ border-color: rgb(0, 0, 0);</string>
     <widget class="QPushButton" name="pushButton_9">
      <property name="geometry">
       <rect>
-       <x>860</x>
+       <x>870</x>
        <y>0</y>
        <width>26</width>
        <height>26</height>

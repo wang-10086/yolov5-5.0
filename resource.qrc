@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="pic">
+    <file>resource/signal.png</file>
     <file>resource/backup3.png</file>
     <file>resource/forward.png</file>
     <file>resource/refresh.png</file>

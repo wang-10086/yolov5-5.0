@@ -6,6 +6,9 @@
 
 本项目是一款基于Yolov5目标检测算法和Pyqt5的铁路信号机视频识别仿真系统，旨在利用Yolov5目标检测算法对铁路行车过程中的信号机进行自动识别，并将结果以可视化界面的形式传递给用户，从而缓解司机在行车过程中的压力，并提高行车安全性。
 
+在yolov5官方源码的基础上，我们增加了pyqt5界面程序、模型加载程序，同时修改了yolov5自带的Dataloader以便于更快地读取数据；
+整个检测界面包括三个部分功能，分别是图片检测、视频检测、摄像头实时检测，采用多线程技术设计，基本能够实现流畅准确地检测效果。
+
 ## Install
 
 1. 安装CUDA和Cudnn
@@ -38,7 +41,7 @@ python mainwindow.py
 > 注意：如果您的GPU算力有限，我们建议在使用本程序时不要使用其他程序占用GPU（如使用obs stdio进行录屏），否则会由于算力不足造成程序崩溃
 
 本项目包含图片检测、视频检测和摄像头实时检测三个功能模块，下面为项目演示视频：
-[铁路信号机视频自动识别与仿真系统演示视频](http://wang-typora.oss-cn-beijing.aliyuncs.com/img/presentation220921.mp4)
+[铁路信号机视频自动识别与仿真系统演示视频](http://wang-typora.oss-cn-beijing.aliyuncs.com/img/铁路信号机视频自动识别仿真系统演示视频.mp4)
 
 ## Datasets
 
@@ -85,7 +88,10 @@ python mainwindow.py
 @[Akkkk](https://github.com/wang-10086)
 @[ykxxx](https://github.com/ykxxxxxx)
 
-## Summary
+## Contact us
+非常欢迎您使用我们的项目进行测试，如果您在使用过程中遇到任何问题，可以通过以下方式联系我们：
+
+@[kunw13520935425@163.com](kunw13520935425@163.com)
 
 
 
