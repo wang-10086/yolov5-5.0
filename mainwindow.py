@@ -54,7 +54,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         # 全局变量初始化
         quit_flag = 0
         pause_flag = 0
-        weights = 'signal.pt'
+        weights = 'train_signal.pt'
         device_id = '0'
         camera_id = '0'
         play_speed = 1
@@ -584,6 +584,7 @@ class VideoDetectThread(QThread):
                     time_log.append(t3 - t0)
 
             print(f'平均每帧用时({sum(time_log) / len(time_log):.3f}s)')
+
             root.mainloop()
 
         except FileNotFoundError:
