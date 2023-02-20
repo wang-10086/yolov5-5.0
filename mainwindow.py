@@ -585,6 +585,7 @@ class VideoDetectThread(QThread):
                     time_log.append(t3 - t0)
 
             print(f'平均每帧用时({sum(time_log) / len(time_log):.3f}s)')
+
             root.mainloop()
 
         except FileNotFoundError:

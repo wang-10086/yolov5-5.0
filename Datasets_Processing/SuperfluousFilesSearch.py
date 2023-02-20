@@ -5,8 +5,8 @@
 
 import os
 
-path1 = "D:/python_project/object_detection/yolov5-u/signal/images/train2017/"      # path1为存储图片的文件夹JPEGImages
-path2 = "D:/python_project/object_detection/yolov5-u/signal/labels/train2017/"     # path2为存储标签文件的文件夹Annotations
+path1 = "C:/Users/17262/Desktop/datasets/images/"      # path1为存储图片的文件夹JPEGImages
+path2 = "C:/Users/17262/Desktop/datasets/labels/"     # path2为存储标签文件的文件夹Annotations
 
 filelist1 = os.listdir(path1)   # 该文件夹下所有的文件（包括文件夹）
 filelist2 = os.listdir(path2)   # 该文件夹下所有的文件（包括文件夹）
@@ -24,12 +24,15 @@ for file1 in filelist1:   # 遍历所有文件
     if count == 0:
         Illegalfiles.append(filename1)
 
-## 输出结果
+## 输出结果，并删除没有对应标签文件的多余图片
 print('----------------------------------------')
 if len(Illegalfiles) != 0:
-    print('以下图片不存在与之对应的标签文件:')
+    print('以下%d张图片不存在与之对应的标签文件:'%(len(Illegalfiles)))
     for Illegalfile in Illegalfiles:
-        print(Illegalfile)
+        # print(Illegalfile)
+        os.remove(path1+Illegalfile+'.jpg')
+        print('Image %s.jpg has been removed.'%(Illegalfile))
+    print("%d images has been removed."%(len(Illegalfiles)))
 else:
     print('所有图片均存在与之对应的标签文件')
 print('----------------------------------------')
