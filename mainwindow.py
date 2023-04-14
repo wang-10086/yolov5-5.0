@@ -6,6 +6,8 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import QThread, pyqtSignal, Qt, QPoint
 
 import time
+from openpyxl import Workbook
+import matplotlib.pyplot as plt
 import torch
 import torch.backends.cudnn as cudnn
 from numpy import random
@@ -483,6 +485,7 @@ class VideoDetectThread(QThread):
         device = select_device(device_id)  # 设置设备
         half = device.type != 'cpu'  # 有CUDA支持时使用半精度
         time_log = []  # 储存每帧的检测时间
+        position_log = []   # 储存检测到目标的位置信息
 
         # 实例化打开文件窗口
         root = tk.Tk()
@@ -511,6 +514,9 @@ class VideoDetectThread(QThread):
             if device.type != 'cpu':
                 model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
             for path, img, im0s, vid_cap, current_frame, total_frame in dataset:
+
+                img0_height = im0s.shape[0]
+                img0_width = im0s.shape[1]
 
                 # 挂起与恢复线程
                 while pause_flag == 1:
@@ -561,9 +567,13 @@ class VideoDetectThread(QThread):
 
                             # Write results
                             for *xyxy, conf, cls in reversed(det):
+                                position = [0, 0]
                                 label = f'{names[int(cls)]} {conf:.2f}'
                                 result_label.append(label)
                                 plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=3)
+                                position[0] = (int(xyxy[0]) + int(xyxy[2])) / 2
+                                position[1] = (int(xyxy[1]) + int(xyxy[3])) / 2
+                                position_log.append(position)
 
                     self._signal.emit(im0)
 
@@ -579,12 +589,39 @@ class VideoDetectThread(QThread):
                         time.sleep(0.0001)
 
                     t3 = time.time()  # 结束检测时间
-                    # Print time (inference + NMS)
                     print(f'{s}Inference+NMS:({t2 - t1:.3f}s)')
                     print(f'总用时({t3 - t0:.3f}s)')
                     time_log.append(t3 - t0)
 
+            # time_log
+            del (time_log[0])       # 删除第一帧异常时间数据
+            time_excel = Workbook()
+            time_excel_ws = time_excel.active
+            time_excel_ws['A1'] = 'time'
+            for time0 in time_log:
+                time_excel_ws.append([time0])
+            time_excel.save('./log/time_log.xlsx')
             print(f'平均每帧用时({sum(time_log) / len(time_log):.3f}s)')
+
+            # position_log
+            x_position = []
+            y_position = []
+            position_excel = Workbook()
+            position_excel_ws = position_excel.active
+            position_excel_ws['A1'] = 'x'
+            position_excel_ws['B1'] = 'y'
+            for position in position_log:
+                x_position.append(position[0])
+                y_position.append(img0_height - position[1])
+                position_excel_ws.append(position)
+            position_excel.save('./log/position_log.xlsx')
+            plt.title('Objects center position', fontsize=13)
+            plt.xlabel('x', fontsize=12)
+            plt.ylabel('y', fontsize=12)
+            plt.xlim(0, img0_width)
+            plt.ylim(0, img0_height)
+            plt.scatter(x_position, y_position, s=4, alpha=0.3)
+            plt.savefig('./log/position_log.png')
 
             root.mainloop()
 
