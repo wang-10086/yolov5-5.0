@@ -2,9 +2,9 @@ import os.path
 
 import matplotlib
 matplotlib.use("Qt5Agg")  # 声明使用pyqt5
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg  # pyqt5的画布
 import matplotlib.pyplot as plt
-import sip
+from matplotlib.figure import Figure
 
 from PyQt5 import QtWidgets
 import numpy as np
@@ -31,7 +31,7 @@ from utils.general import check_img_size, check_requirements, check_imshow, non_
 from utils.plots import plot_one_box
 from utils.torch_utils import select_device, load_classifier, time_synchronized
 
-global model, weights, device_id, camera_id, quit_flag, pause_flag, conf_thres, iou_thres, detect_frequency, fps, play_speed
+global model, weights, device_id, camera_id, quit_flag, pause_flag, conf_thres, iou_thres, detect_frequency, fps, play_speed, is_time_log, is_position_log
 """
 程序用到的全局变量：
 model:  检测用到的模型
@@ -57,7 +57,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         """
         程序初始化
         """
-        global model, weights, device_id, camera_id, quit_flag, pause_flag, conf_thres, iou_thres, detect_frequency, fps, play_speed
+        global model, weights, device_id, camera_id, quit_flag, pause_flag, conf_thres, iou_thres, detect_frequency, fps, play_speed, is_time_log, is_position_log
 
         # 全局变量初始化
         quit_flag = 0
@@ -84,9 +84,13 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         # self.windowEffect.setAcrylicEffect(int(self.winId()))
 
         # log坐标窗口初始化
-        self.verticalLayout_1 = QtWidgets.QVBoxLayout(self.label_11)
-        self.verticalLayout_1.setContentsMargins(0, 0, 0, 0)
-        self.verticalLayout_1.setObjectName("verticalLayout_1")
+        self.time_figure = plt.Figure()
+        self.time_figure.subplots_adjust(left=0.05, bottom=0.15, right=0.99, top=0.95)
+        self.time_canvas = FigureCanvasQTAgg(self.time_figure)
+        self.verticalLayout.addWidget(self.time_canvas)
+        self.position_figure = plt.Figure()
+        self.position_canvas = FigureCanvasQTAgg(self.position_figure)
+        self.verticalLayout_2.addWidget(self.position_canvas)
 
         self.pushButton.clicked.connect(self.detect)
         self.pushButton_2.clicked.connect(self.quit)
@@ -104,6 +108,8 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         self.spinBox_2.valueChanged.connect(self.refresh_fps)
         self.comboBox.currentTextChanged.connect(self.change_camera)
         self.comboBox_2.currentTextChanged.connect(self.change_device)
+        self.checkBox.toggled.connect(self.change_time_log)
+        self.checkBox_2.toggled.connect(self.change_position_log)
 
         # 鼠标参数实例初始化
         self.origin_y = None
@@ -122,6 +128,8 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         iou_thres = self.horizontalSlider_2.value()
         detect_frequency = self.spinBox.value()
         fps = self.spinBox_2.value()
+        is_time_log = self.checkBox.isChecked()
+        is_position_log = self.checkBox_2.isChecked()
 
         # 模型初始化
         model = model_load(weights, device=device_id)
@@ -129,24 +137,39 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         print('模型加载完成')
 
     def time_plot(self, time_ifo):
-        current_frame = time_ifo[0]
-        total_frame = time_ifo[1]
-        time_log = time_ifo[2]
-        if self.verticalLayout_1.count() >= 2:
-            sip.delete(self.canvas)
-        # 清屏
-        plt.cla()
-        plt.clf()
-        # 获取绘图并绘制
-        time_figure = plt.figure()
-        ax = time_figure.add_axes([0.1, 0.1, 0.8, 0.8])
-        ax.set_xlim([0, total_frame])
-        ax.set_ylim([0, 1])
-        frame = range(len(time_log))
-        ax.plot(frame[1:], time_log[1:])
-        self.canvas = FigureCanvas(time_figure)
-        if self.verticalLayout_1.count() < 2:
-            self.verticalLayout_1.addWidget(self.canvas)
+        total_frame = time_ifo[0]
+        time_log = time_ifo[1]
+        try:
+            ax_time = self.time_figure.gca()
+            frame = np.arange(0, len(time_log), 1)
+            ax_time.cla()
+            ax_time.set_xlim([0, total_frame])
+            # ax_time.set_ylim([0, 0.1])
+            ax_time.plot(frame[1:], time_log[1:])
+            self.time_canvas.draw()
+        except Exception as e:
+            print(e)
+
+    def position_plot(self, position_ifo):
+        x_position = []
+        y_position = []
+        position_log = position_ifo[0]
+        img_width = position_ifo[1]
+        img_height = position_ifo[2]
+        for position in position_log:
+            x_position.append(position[0])
+            y_position.append(img_height-position[1])
+        try:
+            ax_position = self.position_figure.gca()
+            ax_position.cla()
+            ax_position.set_xlim([0, img_width])
+            ax_position.set_ylim([0, img_height])
+            ax_position.set_xlabel('x')
+            ax_position.set_ylabel('y')
+            ax_position.scatter(x_position, y_position, s=4, alpha=0.3)
+            self.position_canvas.draw()
+        except Exception as e:
+            print(e)
 
     def mousePressEvent(self, evt):
         """
@@ -297,6 +320,20 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         global fps
         fps = value
 
+    def change_time_log(self):
+        """
+        刷新检测用时记录标志
+        """
+        global is_time_log
+        is_time_log = self.checkBox.isChecked()
+
+    def change_position_log(self):
+        """
+        刷新目标位置记录标志
+        """
+        global is_position_log
+        is_position_log = self.checkBox_2.isChecked()
+
     def change_camera(self, camera):
         """
         更改摄像头函数,作为comboBox.currentTextChanged()信号的槽函数,其值改变时改变camera_id
@@ -374,12 +411,18 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
             quit_flag = 0
             pause_flag = 0
             play_speed = 1  # 重置播放速度为1倍速
+            # 每次检测前清空Log坐标区
+            ax_time = self.time_figure.gca()
+            ax_time.cla()
+            ax_position = self.position_figure.gca()
+            ax_position.cla()
             self.pushButton_3.setIcon(QIcon(QPixmap('./resource/pause.png')))
             self.video_thread = VideoDetectThread()
             self.video_thread.signal.connect(self.display)
             self.video_thread.signal2.connect(self.print_result)
             self.video_thread.signal3.connect(self.progress)
             self.video_thread.signal4.connect(self.time_plot)
+            self.video_thread.signal5.connect(self.position_plot)
             self.video_thread.start()
 
         # 实时检测
@@ -507,12 +550,13 @@ class VideoDetectThread(QThread):
     _signal2 = pyqtSignal(object)  # 发送信号,用于向主线程发送检测结果数据
     _signal3 = pyqtSignal(object)  # 发送信号,用于向主线程发送进度
     _signal4 = pyqtSignal(object)  # 发送信号,用于向主线程发送检测用时
+    _signal5 = pyqtSignal(object)  # 发送信号,用于向主线程发送检测目标位置
 
     def __init__(self, parent=None):
         super(VideoDetectThread, self).__init__(parent)
 
     def run(self):
-        global model, device_id, quit_flag, pause_flag, conf_thres, iou_thres, detect_frequency, fps, play_speed
+        global model, device_id, quit_flag, pause_flag, conf_thres, iou_thres, detect_frequency, fps, play_speed, is_time_log, is_position_log
 
         # 初始化
         imgsz = 640
@@ -626,7 +670,10 @@ class VideoDetectThread(QThread):
                     print(f'{s}Inference+NMS:({t2 - t1:.3f}s)')
                     print(f'总用时({t3 - t0:.3f}s)')
                     time_log.append(t3 - t0)
-                    self._signal4.emit([len(time_log), total_frame, time_log])
+                    if is_time_log:
+                        self._signal4.emit([total_frame, time_log])
+                    if is_position_log:
+                        self._signal5.emit([position_log, img0_width, img0_height])
 
             # time_log
             del (time_log[0])       # 删除第一帧异常时间数据
@@ -682,6 +729,10 @@ class VideoDetectThread(QThread):
     @property
     def signal4(self):
         return self._signal4
+
+    @property
+    def signal5(self):
+        return self._signal5
 
 
 class RealtimeDetectThread(QThread):
