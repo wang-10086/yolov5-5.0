@@ -1,5 +1,12 @@
 import os.path
 
+import matplotlib
+matplotlib.use("Qt5Agg")  # 声明使用pyqt5
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+import matplotlib.pyplot as plt
+import sip
+
+from PyQt5 import QtWidgets
 import numpy as np
 from PyQt5.QtGui import QPixmap, QImage, QIcon, QMouseEvent, QCursor
 from PyQt5.QtWidgets import *
@@ -7,7 +14,6 @@ from PyQt5.QtCore import QThread, pyqtSignal, Qt, QPoint
 
 import time
 from openpyxl import Workbook
-import matplotlib.pyplot as plt
 import torch
 import torch.backends.cudnn as cudnn
 from numpy import random
@@ -68,13 +74,19 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         self.setContentsMargins(0, 0, 0, 0)
         self.label_14.setText(weights)
         self.label_15.setText('GPU[0]')
-        # 亚克力效果,实现窗口磨砂
-        self.windowEffect = WindowEffect()
-        self.resize(1300, 720)
-        self.setWindowFlags(Qt.FramelessWindowHint)
-        # 必须用样式表使背景透明，别用 setAttribute(Qt.WA_TranslucentBackground)，不然界面会卡顿
-        self.setStyleSheet("background:transparent")
-        self.windowEffect.setAcrylicEffect(int(self.winId()))
+
+        # # 亚克力效果,实现窗口磨砂
+        # self.windowEffect = WindowEffect()
+        # self.resize(1300, 720)
+        # self.setWindowFlags(Qt.FramelessWindowHint)
+        # # 必须用样式表使背景透明，别用 setAttribute(Qt.WA_TranslucentBackground)，不然界面会卡顿
+        # self.setStyleSheet("background:transparent")
+        # self.windowEffect.setAcrylicEffect(int(self.winId()))
+
+        # log坐标窗口初始化
+        self.verticalLayout_1 = QtWidgets.QVBoxLayout(self.label_11)
+        self.verticalLayout_1.setContentsMargins(0, 0, 0, 0)
+        self.verticalLayout_1.setObjectName("verticalLayout_1")
 
         self.pushButton.clicked.connect(self.detect)
         self.pushButton_2.clicked.connect(self.quit)
@@ -115,6 +127,26 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         model = model_load(weights, device=device_id)
         self.print_ifo('模型加载完成')
         print('模型加载完成')
+
+    def time_plot(self, time_ifo):
+        current_frame = time_ifo[0]
+        total_frame = time_ifo[1]
+        time_log = time_ifo[2]
+        if self.verticalLayout_1.count() >= 2:
+            sip.delete(self.canvas)
+        # 清屏
+        plt.cla()
+        plt.clf()
+        # 获取绘图并绘制
+        time_figure = plt.figure()
+        ax = time_figure.add_axes([0.1, 0.1, 0.8, 0.8])
+        ax.set_xlim([0, total_frame])
+        ax.set_ylim([0, 1])
+        frame = range(len(time_log))
+        ax.plot(frame[1:], time_log[1:])
+        self.canvas = FigureCanvas(time_figure)
+        if self.verticalLayout_1.count() < 2:
+            self.verticalLayout_1.addWidget(self.canvas)
 
     def mousePressEvent(self, evt):
         """
@@ -347,6 +379,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
             self.video_thread.signal.connect(self.display)
             self.video_thread.signal2.connect(self.print_result)
             self.video_thread.signal3.connect(self.progress)
+            self.video_thread.signal4.connect(self.time_plot)
             self.video_thread.start()
 
         # 实时检测
@@ -473,6 +506,7 @@ class VideoDetectThread(QThread):
     _signal = pyqtSignal(object)  # 发送信号,用于向主线程发送检测结果图片
     _signal2 = pyqtSignal(object)  # 发送信号,用于向主线程发送检测结果数据
     _signal3 = pyqtSignal(object)  # 发送信号,用于向主线程发送进度
+    _signal4 = pyqtSignal(object)  # 发送信号,用于向主线程发送检测用时
 
     def __init__(self, parent=None):
         super(VideoDetectThread, self).__init__(parent)
@@ -592,6 +626,7 @@ class VideoDetectThread(QThread):
                     print(f'{s}Inference+NMS:({t2 - t1:.3f}s)')
                     print(f'总用时({t3 - t0:.3f}s)')
                     time_log.append(t3 - t0)
+                    self._signal4.emit([len(time_log), total_frame, time_log])
 
             # time_log
             del (time_log[0])       # 删除第一帧异常时间数据
@@ -622,6 +657,8 @@ class VideoDetectThread(QThread):
             plt.ylim(0, img0_height)
             plt.scatter(x_position, y_position, s=4, alpha=0.3)
             plt.savefig('./log/position_log.png')
+            plt.cla()
+            plt.clf()
 
             root.mainloop()
 
@@ -641,6 +678,10 @@ class VideoDetectThread(QThread):
     @property
     def signal3(self):
         return self._signal3
+
+    @property
+    def signal4(self):
+        return self._signal4
 
 
 class RealtimeDetectThread(QThread):
