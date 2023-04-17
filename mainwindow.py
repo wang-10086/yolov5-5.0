@@ -45,6 +45,8 @@ iou_thres:  IOU阈值
 detect_frequency:   检测频率，即每隔detect_frequency检测一次
 fps:    检测帧率
 play_speed: 播放倍速，最高支持8倍速
+is_time_log: 是否开启检测用时记录, 为1则实时显示单帧检测用时
+is_position_log: 是否开启检测目标位置记录, 为1则实时显示检测到目标的轨迹变化
 """
 
 
@@ -70,26 +72,32 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         # 界面初始化
         super(MyMainWindow, self).__init__(parent)
         self.setupUi(self)
-        self.setWindowFlags(Qt.CustomizeWindowHint)     # 去除标题栏
+        # self.setWindowFlags(Qt.CustomizeWindowHint)     # 去除标题栏
         self.setContentsMargins(0, 0, 0, 0)
         self.label_14.setText(weights)
         self.label_15.setText('GPU[0]')
+        screen = QDesktopWidget().screenGeometry()
+        size = self.geometry()
+        self.move(int((screen.width() - size.width()) / 2), int((screen.height() - size.height()) / 2))     # 使主窗口位于屏幕正中
 
         # # 亚克力效果,实现窗口磨砂
         # self.windowEffect = WindowEffect()
-        # self.resize(1300, 720)
+        # self.resize(1800, 985)
         # self.setWindowFlags(Qt.FramelessWindowHint)
-        # # 必须用样式表使背景透明，别用 setAttribute(Qt.WA_TranslucentBackground)，不然界面会卡顿
-        # self.setStyleSheet("background:transparent")
+        # self.setStyleSheet("background:transparent")  # 必须用样式表使背景透明，别用 setAttribute(Qt.WA_TranslucentBackground)，不然界面会卡顿
         # self.windowEffect.setAcrylicEffect(int(self.winId()))
 
         # log坐标窗口初始化
-        self.time_figure = plt.Figure()
-        self.time_figure.subplots_adjust(left=0.05, bottom=0.15, right=0.99, top=0.95)
-        self.time_canvas = FigureCanvasQTAgg(self.time_figure)
-        self.verticalLayout.addWidget(self.time_canvas)
-        self.position_figure = plt.Figure()
+        self.time_figure = plt.Figure()     # 创建检测用时figure
+        self.time_figure.patch.set_facecolor('none')    # 设置figure背景颜色为'none'，否则后面的canvas将无法透明
+        self.time_figure.subplots_adjust(left=0.05, bottom=0.15, right=0.99, top=0.95)  # 设置figure边距
+        self.time_canvas = FigureCanvasQTAgg(self.time_figure)  # 创建检测用时canvas
+        self.time_canvas.setStyleSheet("background-color:transparent;")     # 设置canvas样式表为透明
+        self.verticalLayout.addWidget(self.time_canvas)     # 将canvas添加到垂直布局中
+        self.position_figure = plt.Figure() # 创建检测目标位置figure，后续操作同上
+        self.position_figure.patch.set_facecolor('none')
         self.position_canvas = FigureCanvasQTAgg(self.position_figure)
+        self.position_canvas.setStyleSheet("background-color:transparent;")
         self.verticalLayout_2.addWidget(self.position_canvas)
 
         self.pushButton.clicked.connect(self.detect)
@@ -99,8 +107,6 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         self.pushButton_5.clicked.connect(self.history_clear)
         self.pushButton_6.clicked.connect(self.slowdown)
         self.pushButton_7.clicked.connect(self.speedup)
-        self.pushButton_8.clicked.connect(self.close)
-        self.pushButton_9.clicked.connect(self.showMinimized)
 
         self.horizontalSlider.valueChanged.connect(self.refresh_conf_thres)
         self.horizontalSlider_2.valueChanged.connect(self.refresh_iou_thres)
@@ -137,31 +143,37 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         print('模型加载完成')
 
     def time_plot(self, time_ifo):
-        total_frame = time_ifo[0]
-        time_log = time_ifo[1]
+        """
+        单帧检测用时显示函数，接收来自子线程的用时信息，并实时显示
+        """
+        total_frame = time_ifo[0]   # 视频总帧数
+        time_log = time_ifo[1]      # 用时记录列表，存储目前各帧的检测用时
         try:
-            ax_time = self.time_figure.gca()
+            ax_time = self.time_figure.gca()            # 获取time_figure的坐标区
             frame = np.arange(0, len(time_log), 1)
-            ax_time.cla()
+            ax_time.cla()                               # 清空当前坐标区
             ax_time.set_xlim([0, total_frame])
             # ax_time.set_ylim([0, 0.1])
-            ax_time.plot(frame[1:], time_log[1:])
-            self.time_canvas.draw()
+            ax_time.plot(frame[1:], time_log[1:])       # 绘制除了第一帧以外的检测用时记录，因为第一帧的用时数据往往异常偏高
+            self.time_canvas.draw()                     # 显示图片
         except Exception as e:
             print(e)
 
     def position_plot(self, position_ifo):
-        x_position = []
-        y_position = []
-        position_log = position_ifo[0]
-        img_width = position_ifo[1]
-        img_height = position_ifo[2]
+        """
+        检测目标轨迹变化实时显示函数，接收来自子线程的检测目标位置数据，并实时显示
+        """
+        x_position = []     # 创建空列表，存储x轴坐标
+        y_position = []     # 创建空列表，存储y轴坐标
+        position_log = position_ifo[0]                  # 位置信息
+        img_width = position_ifo[1]                     # 图像宽度
+        img_height = position_ifo[2]                    # 图像高度
         for position in position_log:
             x_position.append(position[0])
             y_position.append(img_height-position[1])
         try:
-            ax_position = self.position_figure.gca()
-            ax_position.cla()
+            ax_position = self.position_figure.gca()    # 获取position_figure的坐标区
+            ax_position.cla()                           # 清空当前坐标区
             ax_position.set_xlim([0, img_width])
             ax_position.set_ylim([0, img_height])
             ax_position.set_xlabel('x')
@@ -286,11 +298,15 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
 
     def history_clear(self):
         """
-        清空上次检测的历史记录，包括显示画面、检测结果文本框和进度条
+        清空上次检测的历史记录，包括显示画面、检测结果文本框、进度条以及log记录
         """
         self.label.setPixmap(QPixmap(""))
         self.label_6.clear()
         self.progressBar.setValue(0)
+        ax_time = self.time_figure.gca()
+        ax_time.cla()
+        ax_position = self.position_figure.gca()
+        ax_position.cla()
 
     def refresh_conf_thres(self, value):
         """
@@ -593,8 +609,8 @@ class VideoDetectThread(QThread):
                 model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
             for path, img, im0s, vid_cap, current_frame, total_frame in dataset:
 
-                img0_height = im0s.shape[0]
-                img0_width = im0s.shape[1]
+                img0_height = im0s.shape[0]     # 获取原图高度
+                img0_width = im0s.shape[1]      # 获取原图宽度
 
                 # 挂起与恢复线程
                 while pause_flag == 1:
@@ -670,6 +686,7 @@ class VideoDetectThread(QThread):
                     print(f'{s}Inference+NMS:({t2 - t1:.3f}s)')
                     print(f'总用时({t3 - t0:.3f}s)')
                     time_log.append(t3 - t0)
+                    # 根据log标志位来判断是否向主线程返回log信息
                     if is_time_log:
                         self._signal4.emit([total_frame, time_log])
                     if is_position_log:
