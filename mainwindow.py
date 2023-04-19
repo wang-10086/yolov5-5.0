@@ -1,6 +1,7 @@
 import os.path
 
 import matplotlib
+
 matplotlib.use("Qt5Agg")  # 声明使用pyqt5
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg  # pyqt5的画布
 import matplotlib.pyplot as plt
@@ -30,11 +31,14 @@ from utils.general import check_img_size, check_requirements, check_imshow, non_
     scale_coords, xyxy2xywh, strip_optimizer, set_logging, increment_path
 from utils.plots import plot_one_box
 from utils.torch_utils import select_device, load_classifier, time_synchronized
+from deep_sort_pytorch.utils.parser import get_config
+from deep_sort_pytorch.deep_sort import DeepSort
 
-global model, weights, device_id, camera_id, quit_flag, pause_flag, conf_thres, iou_thres, detect_frequency, fps, play_speed, is_time_log, is_position_log
+global model, deepsort, weights, device_id, camera_id, quit_flag, pause_flag, conf_thres, iou_thres, detect_frequency, fps, play_speed, is_time_log, is_position_log
 """
 程序用到的全局变量：
 model:  检测用到的模型
+deepsort:   跟踪使用的deepsort类
 weights:    检测使用的权重文件
 device_id:  检测设备，'0'、'1'、'2'表示使用0、1、2号GPU，'cpu'表示使用cpu检测
 camera_id:  摄像头编号，'0'、'1'分别表示0、1号摄像头
@@ -49,6 +53,8 @@ is_time_log: 是否开启检测用时记录, 为1则实时显示单帧检测用�
 is_position_log: 是否开启检测目标位置记录, 为1则实时显示检测到目标的轨迹变化
 """
 
+palette = (2 ** 11 - 1, 2 ** 15 - 1, 2 ** 20 - 1)
+
 
 class MyMainWindow(QMainWindow, Ui_MainWindow):
     """
@@ -59,7 +65,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         """
         程序初始化
         """
-        global model, weights, device_id, camera_id, quit_flag, pause_flag, conf_thres, iou_thres, detect_frequency, fps, play_speed, is_time_log, is_position_log
+        global model, deepsort, weights, device_id, camera_id, quit_flag, pause_flag, conf_thres, iou_thres, detect_frequency, fps, play_speed, is_time_log, is_position_log
 
         # 全局变量初始化
         quit_flag = 0
@@ -78,7 +84,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         self.label_15.setText('GPU[0]')
         screen = QDesktopWidget().screenGeometry()
         size = self.geometry()
-        self.move(int((screen.width() - size.width()) / 2), int((screen.height() - size.height()) / 2))     # 使主窗口位于屏幕正中
+        self.move(int((screen.width() - size.width()) / 2), int((screen.height() - size.height()) / 2))  # 使主窗口位于屏幕正中
 
         # # 亚克力效果,实现窗口磨砂
         # self.windowEffect = WindowEffect()
@@ -88,13 +94,13 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         # self.windowEffect.setAcrylicEffect(int(self.winId()))
 
         # log坐标窗口初始化
-        self.time_figure = plt.Figure()     # 创建检测用时figure
-        self.time_figure.patch.set_facecolor('none')    # 设置figure背景颜色为'none'，否则后面的canvas将无法透明
+        self.time_figure = plt.Figure()  # 创建检测用时figure
+        self.time_figure.patch.set_facecolor('none')  # 设置figure背景颜色为'none'，否则后面的canvas将无法透明
         self.time_figure.subplots_adjust(left=0.05, bottom=0.15, right=0.99, top=0.95)  # 设置figure边距
         self.time_canvas = FigureCanvasQTAgg(self.time_figure)  # 创建检测用时canvas
-        self.time_canvas.setStyleSheet("background-color:transparent;")     # 设置canvas样式表为透明
-        self.verticalLayout.addWidget(self.time_canvas)     # 将canvas添加到垂直布局中
-        self.position_figure = plt.Figure() # 创建检测目标位置figure，后续操作同上
+        self.time_canvas.setStyleSheet("background-color:transparent;")  # 设置canvas样式表为透明
+        self.verticalLayout.addWidget(self.time_canvas)  # 将canvas添加到垂直布局中
+        self.position_figure = plt.Figure()  # 创建检测目标位置figure，后续操作同上
         self.position_figure.patch.set_facecolor('none')
         self.position_canvas = FigureCanvasQTAgg(self.position_figure)
         self.position_canvas.setStyleSheet("background-color:transparent;")
@@ -137,25 +143,35 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         is_time_log = self.checkBox.isChecked()
         is_position_log = self.checkBox_2.isChecked()
 
-        # 模型初始化
+        # initialize yolov5 model
         model = model_load(weights, device=device_id)
         self.print_ifo('模型加载完成')
         print('模型加载完成')
+
+        # initialize deepsort
+        cfg = get_config()
+        cfg.merge_from_file("deep_sort_pytorch/configs/deep_sort.yaml")
+        deepsort = DeepSort(cfg.DEEPSORT.REID_CKPT,
+                            max_dist=cfg.DEEPSORT.MAX_DIST, min_confidence=cfg.DEEPSORT.MIN_CONFIDENCE,
+                            nms_max_overlap=cfg.DEEPSORT.NMS_MAX_OVERLAP,
+                            max_iou_distance=cfg.DEEPSORT.MAX_IOU_DISTANCE,
+                            max_age=cfg.DEEPSORT.MAX_AGE, n_init=cfg.DEEPSORT.N_INIT, nn_budget=cfg.DEEPSORT.NN_BUDGET,
+                            use_cuda=True)
 
     def time_plot(self, time_ifo):
         """
         单帧检测用时显示函数，接收来自子线程的用时信息，并实时显示
         """
-        total_frame = time_ifo[0]   # 视频总帧数
-        time_log = time_ifo[1]      # 用时记录列表，存储目前各帧的检测用时
+        total_frame = time_ifo[0]  # 视频总帧数
+        time_log = time_ifo[1]  # 用时记录列表，存储目前各帧的检测用时
         try:
-            ax_time = self.time_figure.gca()            # 获取time_figure的坐标区
+            ax_time = self.time_figure.gca()  # 获取time_figure的坐标区
             frame = np.arange(0, len(time_log), 1)
-            ax_time.cla()                               # 清空当前坐标区
+            ax_time.cla()  # 清空当前坐标区
             ax_time.set_xlim([0, total_frame])
             # ax_time.set_ylim([0, 0.1])
-            ax_time.plot(frame[1:], time_log[1:])       # 绘制除了第一帧以外的检测用时记录，因为第一帧的用时数据往往异常偏高
-            self.time_canvas.draw()                     # 显示图片
+            ax_time.plot(frame[1:], time_log[1:])  # 绘制除了第一帧以外的检测用时记录，因为第一帧的用时数据往往异常偏高
+            self.time_canvas.draw()  # 显示图片
         except Exception as e:
             print(e)
 
@@ -163,17 +179,17 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         """
         检测目标轨迹变化实时显示函数，接收来自子线程的检测目标位置数据，并实时显示
         """
-        x_position = []     # 创建空列表，存储x轴坐标
-        y_position = []     # 创建空列表，存储y轴坐标
-        position_log = position_ifo[0]                  # 位置信息
-        img_width = position_ifo[1]                     # 图像宽度
-        img_height = position_ifo[2]                    # 图像高度
+        x_position = []  # 创建空列表，存储x轴坐标
+        y_position = []  # 创建空列表，存储y轴坐标
+        position_log = position_ifo[0]  # 位置信息
+        img_width = position_ifo[1]  # 图像宽度
+        img_height = position_ifo[2]  # 图像高度
         for position in position_log:
             x_position.append(position[0])
-            y_position.append(img_height-position[1])
+            y_position.append(img_height - position[1])
         try:
-            ax_position = self.position_figure.gca()    # 获取position_figure的坐标区
-            ax_position.cla()                           # 清空当前坐标区
+            ax_position = self.position_figure.gca()  # 获取position_figure的坐标区
+            ax_position.cla()  # 清空当前坐标区
             ax_position.set_xlim([0, img_width])
             ax_position.set_ylim([0, img_height])
             ax_position.set_xlabel('x')
@@ -278,7 +294,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         """
         global play_speed
 
-        if 1 <= play_speed < 8:     # 最高支持8倍速
+        if 1 <= play_speed < 8:  # 最高支持8倍速
             play_speed = play_speed + 1
             self.print_ifo(str(play_speed) + '倍速')
         else:
@@ -290,9 +306,9 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         """
         global play_speed
 
-        if 1 < play_speed <= 8:      # 最高支持8倍速
+        if 1 < play_speed <= 8:  # 最高支持8倍速
             play_speed = play_speed - 1
-            self.print_ifo(str(play_speed)+'倍速')
+            self.print_ifo(str(play_speed) + '倍速')
         else:
             self.print_ifo('已达到最小播放速度')
 
@@ -572,14 +588,14 @@ class VideoDetectThread(QThread):
         super(VideoDetectThread, self).__init__(parent)
 
     def run(self):
-        global model, device_id, quit_flag, pause_flag, conf_thres, iou_thres, detect_frequency, fps, play_speed, is_time_log, is_position_log
+        global model, deepsort, device_id, quit_flag, pause_flag, conf_thres, iou_thres, detect_frequency, fps, play_speed, is_time_log, is_position_log
 
         # 初始化
         imgsz = 640
         device = select_device(device_id)  # 设置设备
         half = device.type != 'cpu'  # 有CUDA支持时使用半精度
         time_log = []  # 储存每帧的检测时间
-        position_log = []   # 储存检测到目标的位置信息
+        position_log = []  # 储存检测到目标的位置信息
 
         # 实例化打开文件窗口
         root = tk.Tk()
@@ -609,8 +625,8 @@ class VideoDetectThread(QThread):
                 model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
             for path, img, im0s, vid_cap, current_frame, total_frame in dataset:
 
-                img0_height = im0s.shape[0]     # 获取原图高度
-                img0_width = im0s.shape[1]      # 获取原图宽度
+                img0_height = im0s.shape[0]  # 获取原图高度
+                img0_width = im0s.shape[1]  # 获取原图宽度
 
                 # 挂起与恢复线程
                 while pause_flag == 1:
@@ -669,6 +685,22 @@ class VideoDetectThread(QThread):
                                 position[1] = (int(xyxy[1]) + int(xyxy[3])) / 2
                                 position_log.append(position)
 
+                            # Adapt detections to deep sort
+                            bbox_xywh = []
+                            confs = []
+                            for *xyxy, conf, cls in det:
+                                x_c, y_c, bbox_w, bbox_h = bbox_rel(*xyxy)
+                                obj = [x_c, y_c, bbox_w, bbox_h]
+                                bbox_xywh.append(obj)
+                                confs.append([conf.item()])
+                            xywhs = torch.Tensor(bbox_xywh)
+                            confss = torch.Tensor(confs)
+                            outputs = deepsort.update(xywhs, confss, im0)   # Pass detections to deepsort
+                            if len(outputs) > 0:
+                                bbox_xyxy = outputs[:, :4]
+                                identities = outputs[:, -1]
+                                draw_boxes(im0, bbox_xyxy, identities)      # draw boxes for visualization
+
                     self._signal.emit(im0)
 
                     # 将检测结果的类别和置信度返回
@@ -693,7 +725,7 @@ class VideoDetectThread(QThread):
                         self._signal5.emit([position_log, img0_width, img0_height])
 
             # time_log
-            del (time_log[0])       # 删除第一帧异常时间数据
+            del (time_log[0])  # 删除第一帧异常时间数据
             time_excel = Workbook()
             time_excel_ws = time_excel.active
             time_excel_ws['A1'] = 'time'
@@ -729,7 +761,6 @@ class VideoDetectThread(QThread):
         except FileNotFoundError:
             print('请重新读取文件')
             root.mainloop()
-
 
     @property
     def signal(self):
@@ -864,6 +895,47 @@ class RealtimeDetectThread(QThread):
     @property
     def signal2(self):
         return self._signal2
+
+
+def bbox_rel(*xyxy):
+    """" Calculates the relative bounding box from absolute pixel values. """
+    bbox_left = min([xyxy[0].item(), xyxy[2].item()])
+    bbox_top = min([xyxy[1].item(), xyxy[3].item()])
+    bbox_w = abs(xyxy[0].item() - xyxy[2].item())
+    bbox_h = abs(xyxy[1].item() - xyxy[3].item())
+    x_c = (bbox_left + bbox_w / 2)
+    y_c = (bbox_top + bbox_h / 2)
+    w = bbox_w
+    h = bbox_h
+    return x_c, y_c, w, h
+
+
+def compute_color_for_labels(label):
+    """
+    Simple function that adds fixed color depending on the class
+    """
+    color = [int((p * (label ** 2 - label + 1)) % 255) for p in palette]
+    return tuple(color)
+
+
+def draw_boxes(img, bbox, identities=None, offset=(0, 0)):
+    for i, box in enumerate(bbox):
+        x1, y1, x2, y2 = [int(i) for i in box]
+        x1 += offset[0]
+        x2 += offset[0]
+        y1 += offset[1]
+        y2 += offset[1]
+        # box text and bar
+        id = int(identities[i]) if identities is not None else 0
+        color = compute_color_for_labels(id)
+        label = '{}{:d}'.format("", id)
+        t_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_PLAIN, 2, 2)[0]
+        cv2.rectangle(img, (x1, y1), (x2, y2), color, 3)
+        cv2.rectangle(
+            img, (x1, y1), (x1 + t_size[0] + 3, y1 + t_size[1] + 4), color, -1)
+        cv2.putText(img, label, (x1, y1 +
+                                 t_size[1] + 4), cv2.FONT_HERSHEY_PLAIN, 2, [255, 255, 255], 2)
+    return img
 
 
 if __name__ == "__main__":
