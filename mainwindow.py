@@ -29,7 +29,7 @@ from UiMainwindow import Ui_MainWindow
 from utils.datasets import LoadStreams, LoadImages, set_camera_quit
 from utils.general import check_img_size, check_requirements, check_imshow, non_max_suppression, apply_classifier, \
     scale_coords, xyxy2xywh, strip_optimizer, set_logging, increment_path
-from utils.plots import plot_one_box
+from utils.plots import plot_one_box, draw_boxes
 from utils.torch_utils import select_device, load_classifier, time_synchronized
 from deep_sort_pytorch.utils.parser import get_config
 from deep_sort_pytorch.deep_sort import DeepSort
@@ -52,8 +52,6 @@ play_speed: 播放倍速，最高支持8倍速
 is_time_log: 是否开启检测用时记录, 为1则实时显示单帧检测用时
 is_position_log: 是否开启检测目标位置记录, 为1则实时显示检测到目标的轨迹变化
 """
-
-palette = (2 ** 11 - 1, 2 ** 15 - 1, 2 ** 20 - 1)
 
 
 class MyMainWindow(QMainWindow, Ui_MainWindow):
@@ -680,26 +678,33 @@ class VideoDetectThread(QThread):
                                 position = [0, 0]
                                 label = f'{names[int(cls)]} {conf:.2f}'
                                 result_label.append(label)
-                                plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=3)
+                                # plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=3)
                                 position[0] = (int(xyxy[0]) + int(xyxy[2])) / 2
                                 position[1] = (int(xyxy[1]) + int(xyxy[3])) / 2
                                 position_log.append(position)
 
                             # Adapt detections to deep sort
-                            bbox_xywh = []
-                            confs = []
-                            for *xyxy, conf, cls in det:
-                                x_c, y_c, bbox_w, bbox_h = bbox_rel(*xyxy)
-                                obj = [x_c, y_c, bbox_w, bbox_h]
-                                bbox_xywh.append(obj)
-                                confs.append([conf.item()])
-                            xywhs = torch.Tensor(bbox_xywh)
-                            confss = torch.Tensor(confs)
-                            outputs = deepsort.update(xywhs, confss, im0)   # Pass detections to deepsort
-                            if len(outputs) > 0:
-                                bbox_xyxy = outputs[:, :4]
-                                identities = outputs[:, -1]
-                                draw_boxes(im0, bbox_xyxy, identities)      # draw boxes for visualization
+                            try:
+                                bbox_xywh = []
+                                confs = []
+                                cls_label = []
+                                for *xyxy, conf, cls in det:
+                                    cls_label_s = f'{names[int(cls)]} {conf:.2f}'
+                                    cls_label.append(cls_label_s)
+                                    x_c, y_c, bbox_w, bbox_h = bbox_rel(*xyxy)
+                                    obj = [x_c, y_c, bbox_w, bbox_h]
+                                    bbox_xywh.append(obj)
+                                    confs.append([conf.item()])
+                                xywhs = torch.Tensor(bbox_xywh)
+                                confss = torch.Tensor(confs)
+                                outputs = deepsort.update(xywhs, confss, im0)   # Pass detections to deepsort
+                                if len(outputs) > 0:
+                                    bbox_xyxy = outputs[:, :4]
+                                    identities = outputs[:, -1]
+                                    draw_boxes(im0, bbox_xyxy, identities, cls_label)      # draw boxes for visualization
+
+                            except Exception as e:
+                                print(e)
 
                     self._signal.emit(im0)
 
@@ -758,8 +763,8 @@ class VideoDetectThread(QThread):
 
             root.mainloop()
 
-        except FileNotFoundError:
-            print('请重新读取文件')
+        except Exception as e:
+            print(e)
             root.mainloop()
 
     @property
@@ -908,34 +913,6 @@ def bbox_rel(*xyxy):
     w = bbox_w
     h = bbox_h
     return x_c, y_c, w, h
-
-
-def compute_color_for_labels(label):
-    """
-    Simple function that adds fixed color depending on the class
-    """
-    color = [int((p * (label ** 2 - label + 1)) % 255) for p in palette]
-    return tuple(color)
-
-
-def draw_boxes(img, bbox, identities=None, offset=(0, 0)):
-    for i, box in enumerate(bbox):
-        x1, y1, x2, y2 = [int(i) for i in box]
-        x1 += offset[0]
-        x2 += offset[0]
-        y1 += offset[1]
-        y2 += offset[1]
-        # box text and bar
-        id = int(identities[i]) if identities is not None else 0
-        color = compute_color_for_labels(id)
-        label = '{}{:d}'.format("", id)
-        t_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_PLAIN, 2, 2)[0]
-        cv2.rectangle(img, (x1, y1), (x2, y2), color, 3)
-        cv2.rectangle(
-            img, (x1, y1), (x1 + t_size[0] + 3, y1 + t_size[1] + 4), color, -1)
-        cv2.putText(img, label, (x1, y1 +
-                                 t_size[1] + 4), cv2.FONT_HERSHEY_PLAIN, 2, [255, 255, 255], 2)
-    return img
 
 
 if __name__ == "__main__":
