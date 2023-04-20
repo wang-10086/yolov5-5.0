@@ -53,13 +53,11 @@ python mainwindow.py
 <details open>
 <summary>功能演示</summary>
 
-下面是铁路信号机视频自动识别与仿真系统的演示视频：
+下面是[铁路信号机视频自动识别与仿真系统](http://wang-typora.oss-cn-beijing.aliyuncs.com/img/presentation(train)_23_02_20.mp4 )的部分效果：
 <div align="center">
-<video width="600" height="360" controls>
-    <source src="http://wang-typora.oss-cn-beijing.aliyuncs.com/img/presentation(train)_23_02_20.mp4" type="video/mp4">
-</video>
+<img src="presentation.gif" alt="图片加载失败" width="90%" />
 <br>
-演示视频
+演示效果
 </div>
 </details>
 
