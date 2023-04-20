@@ -1,13 +1,9 @@
 import os.path
 
 import matplotlib
-
 matplotlib.use("Qt5Agg")  # 声明使用pyqt5
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg  # pyqt5的画布
 import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
-
-from PyQt5 import QtWidgets
 import numpy as np
 from PyQt5.QtGui import QPixmap, QImage, QIcon, QMouseEvent, QCursor
 from PyQt5.QtWidgets import *
@@ -68,7 +64,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         # 全局变量初始化
         quit_flag = 0
         pause_flag = 0
-        weights = 'train_signal.pt'
+        weights = 'weights/train_signal.pt'
         device_id = '0'
         camera_id = '0'
         play_speed = 1
@@ -78,7 +74,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         self.setupUi(self)
         # self.setWindowFlags(Qt.CustomizeWindowHint)     # 去除标题栏
         self.setContentsMargins(0, 0, 0, 0)
-        self.label_14.setText(weights)
+        self.label_14.setText(os.path.basename(weights))
         self.label_15.setText('GPU[0]')
         screen = QDesktopWidget().screenGeometry()
         size = self.geometry()
