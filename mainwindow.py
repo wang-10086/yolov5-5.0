@@ -29,6 +29,7 @@ from utils.plots import plot_one_box, draw_boxes
 from utils.torch_utils import select_device, load_classifier, time_synchronized
 from deep_sort_pytorch.utils.parser import get_config
 from deep_sort_pytorch.deep_sort import DeepSort
+from multi_signal_filter import MultiSignalFilter
 
 global model, deepsort, weights, device_id, camera_id, quit_flag, pause_flag, conf_thres, iou_thres, detect_frequency, fps, play_speed, is_time_log, is_position_log
 """
@@ -243,6 +244,12 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         """
         self.label_6.setText(s)
 
+    def print_target_signal(self, id):
+        """
+        当前信号机id输出函数，接收来自子线程的当前信号机id，并在label_23加以输出
+        """
+        self.label_23.setText(str(id))
+
     def print_ifo(self, s):
         """
         状态信息输出函数，在label_16加以输出
@@ -449,6 +456,8 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
             self.video_thread.signal3.connect(self.progress)
             self.video_thread.signal4.connect(self.time_plot)
             self.video_thread.signal5.connect(self.position_plot)
+            self.video_thread.signal6.connect(self.print_target_signal)
+
             self.video_thread.start()
 
         # 实时检测
@@ -577,6 +586,7 @@ class VideoDetectThread(QThread):
     _signal3 = pyqtSignal(object)  # 发送信号,用于向主线程发送进度
     _signal4 = pyqtSignal(object)  # 发送信号,用于向主线程发送检测用时
     _signal5 = pyqtSignal(object)  # 发送信号,用于向主线程发送检测目标位置
+    _signal6 = pyqtSignal(object)  # 发送信号,用于向主线程发送指示当前车道信号机
 
     def __init__(self, parent=None):
         super(VideoDetectThread, self).__init__(parent)
@@ -590,6 +600,7 @@ class VideoDetectThread(QThread):
         half = device.type != 'cpu'  # 有CUDA支持时使用半精度
         time_log = []  # 储存每帧的检测时间
         position_log = []  # 储存检测到目标的位置信息
+        filter = MultiSignalFilter()     # 初始化筛选分类模块
 
         # 实例化打开文件窗口
         root = tk.Tk()
@@ -697,6 +708,8 @@ class VideoDetectThread(QThread):
                                 if len(outputs) > 0:
                                     bbox_xyxy = outputs[:, :4]
                                     identities = outputs[:, -1]
+                                    target_signal_id = filter.update(bbox_xyxy, identities)
+                                    self._signal6.emit(target_signal_id)
                                     draw_boxes(im0, bbox_xyxy, identities, cls_label)      # draw boxes for visualization
 
                             except Exception as e:
@@ -782,6 +795,10 @@ class VideoDetectThread(QThread):
     @property
     def signal5(self):
         return self._signal5
+
+    @property
+    def signal6(self):
+        return self._signal6
 
 
 class RealtimeDetectThread(QThread):

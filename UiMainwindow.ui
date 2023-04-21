@@ -874,9 +874,9 @@ color: rgb(255, 255, 255);</string>
     <widget class="QWidget" name="verticalLayoutWidget">
      <property name="geometry">
       <rect>
-       <x>0</x>
+       <x>20</x>
        <y>660</y>
-       <width>1001</width>
+       <width>961</width>
        <height>201</height>
       </rect>
      </property>
@@ -885,9 +885,9 @@ color: rgb(255, 255, 255);</string>
     <widget class="QLabel" name="label_18">
      <property name="geometry">
       <rect>
-       <x>0</x>
+       <x>18</x>
        <y>635</y>
-       <width>999</width>
+       <width>961</width>
        <height>231</height>
       </rect>
      </property>
@@ -917,7 +917,7 @@ border-color: rgb(0, 0, 0);</string>
     <widget class="QLabel" name="label_19">
      <property name="geometry">
       <rect>
-       <x>10</x>
+       <x>30</x>
        <y>639</y>
        <width>91</width>
        <height>21</height>
@@ -1128,12 +1128,88 @@ border-color: rgb(0, 0, 0);</string>
      <string/>
     </property>
    </widget>
+   <widget class="QLabel" name="label_21">
+    <property name="geometry">
+     <rect>
+      <x>1390</x>
+      <y>490</y>
+      <width>181</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Microsoft YaHei</family>
+      <pointsize>11</pointsize>
+     </font>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">color: rgb(255, 255, 255);</string>
+    </property>
+    <property name="text">
+     <string>指示当前车道信号机：</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_22">
+    <property name="geometry">
+     <rect>
+      <x>1370</x>
+      <y>490</y>
+      <width>401</width>
+      <height>396</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">border-width: 1px;
+border-style: solid;
+border-color: rgb(0, 0, 0);</string>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_23">
+    <property name="geometry">
+     <rect>
+      <x>1420</x>
+      <y>550</y>
+      <width>291</width>
+      <height>251</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Microsoft YaHei</family>
+     </font>
+    </property>
+    <property name="layoutDirection">
+     <enum>Qt::LeftToRight</enum>
+    </property>
+    <property name="autoFillBackground">
+     <bool>false</bool>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">border-width: 1px;
+border-style: solid;
+border-color: rgb(0, 0, 0);
+color: rgb(255, 255, 255);</string>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+    </property>
+   </widget>
+   <zorder>label_22</zorder>
    <zorder>label_20</zorder>
    <zorder>frame</zorder>
    <zorder>frame_2</zorder>
    <zorder>frame_3</zorder>
    <zorder>label_12</zorder>
    <zorder>verticalLayoutWidget_2</zorder>
+   <zorder>label_21</zorder>
+   <zorder>label_23</zorder>
   </widget>
  </widget>
  <resources>
