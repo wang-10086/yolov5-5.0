@@ -31,11 +31,10 @@ from deep_sort_pytorch.utils.parser import get_config
 from deep_sort_pytorch.deep_sort import DeepSort
 from multi_signal_filter import MultiSignalFilter
 
-global model, deepsort, weights, device_id, camera_id, quit_flag, pause_flag, conf_thres, iou_thres, detect_frequency, fps, play_speed, is_time_log, is_position_log
+global model, weights, device_id, camera_id, quit_flag, pause_flag, conf_thres, iou_thres, detect_frequency, fps, play_speed, is_time_log, is_position_log
 """
 程序用到的全局变量：
 model:  检测用到的模型
-deepsort:   跟踪使用的deepsort类
 weights:    检测使用的权重文件
 device_id:  检测设备，'0'、'1'、'2'表示使用0、1、2号GPU，'cpu'表示使用cpu检测
 camera_id:  摄像头编号，'0'、'1'分别表示0、1号摄像头
@@ -60,7 +59,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         """
         程序初始化
         """
-        global model, deepsort, weights, device_id, camera_id, quit_flag, pause_flag, conf_thres, iou_thres, detect_frequency, fps, play_speed, is_time_log, is_position_log
+        global model, weights, device_id, camera_id, quit_flag, pause_flag, conf_thres, iou_thres, detect_frequency, fps, play_speed, is_time_log, is_position_log
 
         # 全局变量初始化
         quit_flag = 0
@@ -88,19 +87,6 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         # self.setStyleSheet("background:transparent")  # 必须用样式表使背景透明，别用 setAttribute(Qt.WA_TranslucentBackground)，不然界面会卡顿
         # self.windowEffect.setAcrylicEffect(int(self.winId()))
 
-        # log坐标窗口初始化
-        self.time_figure = plt.Figure()  # 创建检测用时figure
-        self.time_figure.patch.set_facecolor('none')  # 设置figure背景颜色为'none'，否则后面的canvas将无法透明
-        self.time_figure.subplots_adjust(left=0.05, bottom=0.15, right=0.99, top=0.95)  # 设置figure边距
-        self.time_canvas = FigureCanvasQTAgg(self.time_figure)  # 创建检测用时canvas
-        self.time_canvas.setStyleSheet("background-color:transparent;")  # 设置canvas样式表为透明
-        self.verticalLayout.addWidget(self.time_canvas)  # 将canvas添加到垂直布局中
-        self.position_figure = plt.Figure()  # 创建检测目标位置figure，后续操作同上
-        self.position_figure.patch.set_facecolor('none')
-        self.position_canvas = FigureCanvasQTAgg(self.position_figure)
-        self.position_canvas.setStyleSheet("background-color:transparent;")
-        self.verticalLayout_2.addWidget(self.position_canvas)
-
         self.pushButton.clicked.connect(self.detect)
         self.pushButton_2.clicked.connect(self.quit)
         self.pushButton_3.clicked.connect(self.pause)
@@ -117,6 +103,19 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         self.comboBox_2.currentTextChanged.connect(self.change_device)
         self.checkBox.toggled.connect(self.change_time_log)
         self.checkBox_2.toggled.connect(self.change_position_log)
+
+        # log坐标窗口初始化
+        self.time_figure = plt.Figure()  # 创建检测用时figure
+        self.time_figure.patch.set_facecolor('none')  # 设置figure背景颜色为'none'，否则后面的canvas将无法透明
+        self.time_figure.subplots_adjust(left=0.05, bottom=0.15, right=0.99, top=0.95)  # 设置figure边距
+        self.time_canvas = FigureCanvasQTAgg(self.time_figure)  # 创建检测用时canvas
+        self.time_canvas.setStyleSheet("background-color:transparent;")  # 设置canvas样式表为透明
+        self.verticalLayout.addWidget(self.time_canvas)  # 将canvas添加到垂直布局中
+        self.position_figure = plt.Figure()  # 创建检测目标位置figure，后续操作同上
+        self.position_figure.patch.set_facecolor('none')
+        self.position_canvas = FigureCanvasQTAgg(self.position_figure)
+        self.position_canvas.setStyleSheet("background-color:transparent;")
+        self.verticalLayout_2.addWidget(self.position_canvas)
 
         # 鼠标参数实例初始化
         self.origin_y = None
@@ -142,16 +141,6 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         model = model_load(weights, device=device_id)
         self.print_ifo('模型加载完成')
         print('模型加载完成')
-
-        # initialize deepsort
-        cfg = get_config()
-        cfg.merge_from_file("deep_sort_pytorch/configs/deep_sort.yaml")
-        deepsort = DeepSort(cfg.DEEPSORT.REID_CKPT,
-                            max_dist=cfg.DEEPSORT.MAX_DIST, min_confidence=cfg.DEEPSORT.MIN_CONFIDENCE,
-                            nms_max_overlap=cfg.DEEPSORT.NMS_MAX_OVERLAP,
-                            max_iou_distance=cfg.DEEPSORT.MAX_IOU_DISTANCE,
-                            max_age=cfg.DEEPSORT.MAX_AGE, n_init=cfg.DEEPSORT.N_INIT, nn_budget=cfg.DEEPSORT.NN_BUDGET,
-                            use_cuda=True)
 
     def time_plot(self, time_ifo):
         """
@@ -247,8 +236,12 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
     def print_target_signal(self, id):
         """
         当前信号机id输出函数，接收来自子线程的当前信号机id，并在label_23加以输出
+        id为0表示正在尝试识别
         """
-        self.label_23.setText(str(id))
+        if id == 0:
+            self.label_23.setText('正在尝试识别')
+        else:
+            self.label_23.setText(str(id))
 
     def print_ifo(self, s):
         """
@@ -592,7 +585,7 @@ class VideoDetectThread(QThread):
         super(VideoDetectThread, self).__init__(parent)
 
     def run(self):
-        global model, deepsort, device_id, quit_flag, pause_flag, conf_thres, iou_thres, detect_frequency, fps, play_speed, is_time_log, is_position_log
+        global model, device_id, quit_flag, pause_flag, conf_thres, iou_thres, detect_frequency, fps, play_speed, is_time_log, is_position_log
 
         # 初始化
         imgsz = 640
@@ -601,6 +594,15 @@ class VideoDetectThread(QThread):
         time_log = []  # 储存每帧的检测时间
         position_log = []  # 储存检测到目标的位置信息
         filter = MultiSignalFilter()     # 初始化筛选分类模块
+        # initialize deepsort
+        cfg = get_config()
+        cfg.merge_from_file("deep_sort_pytorch/configs/deep_sort.yaml")
+        deepsort = DeepSort(cfg.DEEPSORT.REID_CKPT,
+                            max_dist=cfg.DEEPSORT.MAX_DIST, min_confidence=cfg.DEEPSORT.MIN_CONFIDENCE,
+                            nms_max_overlap=cfg.DEEPSORT.NMS_MAX_OVERLAP,
+                            max_iou_distance=cfg.DEEPSORT.MAX_IOU_DISTANCE,
+                            max_age=cfg.DEEPSORT.MAX_AGE, n_init=cfg.DEEPSORT.N_INIT, nn_budget=cfg.DEEPSORT.NN_BUDGET,
+                            use_cuda=True)
 
         # 实例化打开文件窗口
         root = tk.Tk()

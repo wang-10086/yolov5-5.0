@@ -465,6 +465,7 @@ class Ui_MainWindow(object):
         self.label_23.setGeometry(QtCore.QRect(1420, 550, 291, 251))
         font = QtGui.QFont()
         font.setFamily("Microsoft YaHei")
+        font.setPointSize(10)
         self.label_23.setFont(font)
         self.label_23.setLayoutDirection(QtCore.Qt.LeftToRight)
         self.label_23.setAutoFillBackground(False)

@@ -1180,6 +1180,7 @@ border-color: rgb(0, 0, 0);</string>
     <property name="font">
      <font>
       <family>Microsoft YaHei</family>
+      <pointsize>10</pointsize>
      </font>
     </property>
     <property name="layoutDirection">
