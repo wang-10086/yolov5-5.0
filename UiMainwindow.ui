@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1800</width>
-    <height>960</height>
+    <width>1804</width>
+    <height>969</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -58,7 +58,7 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <property name="styleSheet">
-    <string notr="true">#centralwidget{border-image: url(:/pic/resource/background.svg);}</string>
+    <string notr="true"/>
    </property>
    <widget class="QFrame" name="frame">
     <property name="geometry">
@@ -94,7 +94,7 @@
       </font>
      </property>
      <property name="styleSheet">
-      <string notr="true">color: rgb(255, 255, 255);</string>
+      <string notr="true">color: rgb(0, 0, 0);</string>
      </property>
      <property name="text">
       <string>置信度阈值：</string>
@@ -116,7 +116,7 @@
       </font>
      </property>
      <property name="styleSheet">
-      <string notr="true">color: rgb(255, 255, 255);</string>
+      <string notr="true">color: rgb(0, 0, 0);</string>
      </property>
      <property name="text">
       <string>IOU阈值：</string>
@@ -138,7 +138,7 @@
       </font>
      </property>
      <property name="styleSheet">
-      <string notr="true">color: rgb(255, 255, 255);</string>
+      <string notr="true">color: rgb(0, 0, 0);</string>
      </property>
      <property name="text">
       <string>检测频率：</string>
@@ -160,7 +160,7 @@
       </font>
      </property>
      <property name="styleSheet">
-      <string notr="true">color: rgb(255, 255, 255);</string>
+      <string notr="true">color: rgb(0, 0, 0);</string>
      </property>
      <property name="text">
       <string>输出帧率：</string>
@@ -257,7 +257,7 @@ background-color: rgb(255, 255, 255);</string>
       </font>
      </property>
      <property name="styleSheet">
-      <string notr="true">color: rgb(255, 255, 255);</string>
+      <string notr="true">color: rgb(0, 0, 0);</string>
      </property>
      <property name="text">
       <string>检测结果：</string>
@@ -279,7 +279,7 @@ background-color: rgb(255, 255, 255);</string>
       </font>
      </property>
      <property name="styleSheet">
-      <string notr="true">color: rgb(255, 255, 255);</string>
+      <string notr="true">color: rgb(0, 0, 0);</string>
      </property>
      <property name="text">
       <string>检测方式：</string>
@@ -449,7 +449,7 @@ background-color: rgb(255, 255, 255);</string>
       </font>
      </property>
      <property name="styleSheet">
-      <string notr="true">color: rgb(255, 255, 255);</string>
+      <string notr="true">color: rgb(0, 0, 0);</string>
      </property>
      <property name="text">
       <string>摄像头：</string>
@@ -550,7 +550,7 @@ border-radius: 4px;</string>
       </font>
      </property>
      <property name="styleSheet">
-      <string notr="true">color: rgb(255, 255, 255);</string>
+      <string notr="true">color: rgb(0, 0, 0);</string>
      </property>
      <property name="text">
       <string>log设置：</string>
@@ -572,7 +572,7 @@ border-radius: 4px;</string>
       </font>
      </property>
      <property name="styleSheet">
-      <string notr="true">color: rgb(255, 255, 255);</string>
+      <string notr="true">color: rgb(0, 0, 0);</string>
      </property>
      <property name="text">
       <string>检测用时记录</string>
@@ -597,7 +597,7 @@ border-radius: 4px;</string>
       </font>
      </property>
      <property name="styleSheet">
-      <string notr="true">color: rgb(255, 255, 255);</string>
+      <string notr="true">color: rgb(0, 0, 0);</string>
      </property>
      <property name="text">
       <string>目标位置记录</string>
@@ -627,7 +627,7 @@ border-radius: 4px;</string>
       <string notr="true">border-width: 1px;
 border-style: solid;
 border-color: rgb(0, 0, 0);
-color: rgb(255, 255, 255);</string>
+color: rgb(0, 0, 0);</string>
      </property>
      <property name="text">
       <string/>
@@ -930,7 +930,7 @@ border-color: rgb(0, 0, 0);</string>
       </font>
      </property>
      <property name="styleSheet">
-      <string notr="true">color: rgb(255, 255, 255);</string>
+      <string notr="true">color: rgb(0, 0, 0);</string>
      </property>
      <property name="text">
       <string>单帧用时：</string>
@@ -982,7 +982,7 @@ border-color: rgb(0, 0, 0);</string>
       </font>
      </property>
      <property name="styleSheet">
-      <string notr="true">color: rgb(255, 255, 255);</string>
+      <string notr="true">color: rgb(0, 0, 0);</string>
      </property>
      <property name="text">
       <string>GPU[0]</string>
@@ -1004,7 +1004,7 @@ border-color: rgb(0, 0, 0);</string>
       </font>
      </property>
      <property name="styleSheet">
-      <string notr="true">color: rgb(255, 255, 255);</string>
+      <string notr="true">color: rgb(0, 0, 0);</string>
      </property>
      <property name="text">
       <string>coco128.pt</string>
@@ -1026,7 +1026,7 @@ border-color: rgb(0, 0, 0);</string>
       </font>
      </property>
      <property name="styleSheet">
-      <string notr="true">color: rgb(255, 255, 255);</string>
+      <string notr="true">color: rgb(0, 0, 0);</string>
      </property>
      <property name="text">
       <string>正在使用：</string>
@@ -1048,7 +1048,7 @@ border-color: rgb(0, 0, 0);</string>
       </font>
      </property>
      <property name="styleSheet">
-      <string notr="true">color: rgb(255, 255, 255);</string>
+      <string notr="true">color: rgb(0, 0, 0);</string>
      </property>
      <property name="text">
       <string/>
@@ -1070,7 +1070,7 @@ border-color: rgb(0, 0, 0);</string>
       </font>
      </property>
      <property name="styleSheet">
-      <string notr="true">color: rgb(255, 255, 255);</string>
+      <string notr="true">color: rgb(0, 0, 0);</string>
      </property>
      <property name="text">
       <string>message:</string>
@@ -1093,7 +1093,7 @@ border-color: rgb(0, 0, 0);</string>
      </font>
     </property>
     <property name="styleSheet">
-     <string notr="true">color: rgb(255, 255, 255);</string>
+     <string notr="true">color: rgb(0, 0, 0);</string>
     </property>
     <property name="text">
      <string>轨迹变化：</string>
@@ -1144,7 +1144,7 @@ border-color: rgb(0, 0, 0);</string>
      </font>
     </property>
     <property name="styleSheet">
-     <string notr="true">color: rgb(255, 255, 255);</string>
+     <string notr="true">color: rgb(0, 0, 0);</string>
     </property>
     <property name="text">
      <string>指示当前车道信号机：</string>
@@ -1193,7 +1193,7 @@ border-color: rgb(0, 0, 0);</string>
      <string notr="true">border-width: 1px;
 border-style: solid;
 border-color: rgb(0, 0, 0);
-color: rgb(255, 255, 255);</string>
+color: rgb(0, 0, 0);</string>
     </property>
     <property name="text">
      <string/>

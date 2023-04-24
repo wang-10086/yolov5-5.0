@@ -153,6 +153,8 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
             frame = np.arange(0, len(time_log), 1)
             ax_time.cla()  # 清空当前坐标区
             ax_time.set_xlim([0, total_frame])
+            ax_time.patch.set_facecolor('None')
+            ax_time.patch.set_alpha(0.0)
             # ax_time.set_ylim([0, 0.1])
             ax_time.plot(frame[1:], time_log[1:])  # 绘制除了第一帧以外的检测用时记录，因为第一帧的用时数据往往异常偏高
             self.time_canvas.draw()  # 显示图片
@@ -174,6 +176,8 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         try:
             ax_position = self.position_figure.gca()  # 获取position_figure的坐标区
             ax_position.cla()  # 清空当前坐标区
+            ax_position.patch.set_facecolor('None')
+            ax_position.patch.set_alpha(0.0)
             ax_position.set_xlim([0, img_width])
             ax_position.set_ylim([0, img_height])
             ax_position.set_xlabel('x')
@@ -312,11 +316,14 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         """
         self.label.setPixmap(QPixmap(""))
         self.label_6.clear()
+        self.label_23.clear()
         self.progressBar.setValue(0)
         ax_time = self.time_figure.gca()
         ax_time.cla()
+        self.time_canvas.draw()
         ax_position = self.position_figure.gca()
         ax_position.cla()
+        self.position_canvas.draw()
 
     def refresh_conf_thres(self, value):
         """
