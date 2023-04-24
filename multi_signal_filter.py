@@ -4,7 +4,7 @@ import numpy as np
 class MultiSignalFilter(object):
     def __init__(self):
         self.signal_cache = {}  # 存储各id信号机轨迹的字典
-        self.cache_size = 80  # 信号机连续轨迹长度
+        self.cache_size = 60  # 信号机连续轨迹长度
 
     def update(self, bbox, identities=None):
         current_id = []  # 当前帧包含信号机的id
@@ -53,6 +53,10 @@ class MultiSignalFilter(object):
             # if self.compare(current_id[i], current_id[lowest_i], fiting_result[i], fiting_result[lowest_i]) and i != 0:
             if self.compare(current_id[i], current_id[lowest_i]) and i != 0:
                 lowest_i = i
+
+        # 如果筛选结果为第1个信号机，但该信号机轨迹斜率大于0，此时不能正常返回id值，而应返回0
+        if lowest_i == 0 and fiting_result[0][0] > 0:
+            return 0
 
         return current_id[lowest_i]
 
