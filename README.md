@@ -1,7 +1,7 @@
 # Yolo for Railway Signal-铁路信号机视频自动识别与仿真系统
 
 <div align="center">
-<img src="http://wang-typora.oss-cn-beijing.aliyuncs.com/img/logo_23_04_25.png" style="zoom:100%;" />
+<img src="http://wang-typora.oss-cn-beijing.aliyuncs.com/img/logo_23_04_25_20_52.png" style="zoom:100%;" />
 </div>
 
 我们很高兴迎来了Yolo for Railway Signal的2.0版本，本项目自2022年7月正式开启以来，已经度过了9个月的时间。从最开始的和利时杯科技创新大赛的比赛项目，到后来成为我个人的本科毕业设计，我们从来都没有停止过对铁路信号机视频检测项目的探索和开发，希望我们的研究能够给您带来帮助。
