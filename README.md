@@ -1,6 +1,6 @@
 # Yolo for Railway Signal-铁路信号机视频自动识别与仿真系统
 
-![](http://wang-typora.oss-cn-beijing.aliyuncs.com/img/Snipaste_2022-10-28_21-18-20.jpg)
+![](http://wang-typora.oss-cn-beijing.aliyuncs.com/img/logo_23_04_25.png)
 
 我们很高兴迎来了Yolo for Railway Signal的2.0版本，本项目自2022年7月正式开启以来，已经度过了9个月的时间。从最开始的和利时杯科技创新大赛的比赛项目，到后来成为我个人的本科毕业设计，我们从来都没有停止过对铁路信号机视频检测项目的探索和开发，希望我们的研究能够给您带来帮助。
 
@@ -28,7 +28,7 @@
 
 ## Usage
 
-<details open>
+<details>
 <summary>运行</summary>
 
 运行mainwindow.py：
@@ -38,7 +38,7 @@ python mainwindow.py
 
 </details>
 
-<details open>
+<details>
 <summary>界面介绍</summary>
 
 整个界面包括参数设置模块、功能选择模块、结果显示模块、视频播放模块，后续还会增加目标轨迹实时显示和检测用时实时显示模块。
@@ -50,7 +50,7 @@ python mainwindow.py
 </div>
 </details>
 
-<details open>
+<details>
 <summary>功能演示</summary>
 
 下面是[铁路信号机视频自动识别与仿真系统](http://wang-typora.oss-cn-beijing.aliyuncs.com/img/presentation(train)_23_02_20.mp4 )的部分效果：
