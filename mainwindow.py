@@ -320,9 +320,13 @@ class MyMainWindow(QMainWindow, Ui_MainWindow):
         self.progressBar.setValue(0)
         ax_time = self.time_figure.gca()
         ax_time.cla()
+        ax_time.patch.set_facecolor('None')
+        ax_time.patch.set_alpha(0.0)
         self.time_canvas.draw()
         ax_position = self.position_figure.gca()
         ax_position.cla()
+        ax_position.patch.set_facecolor('None')
+        ax_position.patch.set_alpha(0.0)
         self.position_canvas.draw()
 
     def refresh_conf_thres(self, value):

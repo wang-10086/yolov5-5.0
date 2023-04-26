@@ -91,7 +91,7 @@ python mainwindow.py
 考虑到在信号机检测场景中，几乎不会出现短时间或长时间的目标重叠，也就是说无需考虑跟踪过程中的ID切换问题，本项目使用Deepsort作为目标跟踪器来对yolov5检测的结果进行实时跟踪，以获取同一个信号机的连续轨迹，进而根据轨迹变化特征进行信号机筛选。
 
 <div align="center">
-<img src="http://wang-typora.oss-cn-beijing.aliyuncs.com/img/2022_06_15_09_42_30.gif" alt="图片加载失败" width="60%" />
+<img src="http://wang-typora.oss-cn-beijing.aliyuncs.com/img/23_04_27_13_13.gif" alt="图片加载失败" width="70%" />
 <br>
 deepsort跟踪效果
 </div>
