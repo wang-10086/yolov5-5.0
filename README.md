@@ -55,13 +55,8 @@ python mainwindow.py
 <details>
 <summary>功能演示</summary>
 
-下面是[铁路信号机视频自动识别与仿真系统](http://wang-typora.oss-cn-beijing.aliyuncs.com/img/presentation(train)_23_02_20.mp4 )的部分效果：
+演示视频：[铁路信号机视频自动识别与仿真系统演示视频](http://wang-typora.oss-cn-beijing.aliyuncs.com/img/presentation(train)_23_02_20.mp4 )
 
-<div align="center">
-<img src="http://wang-typora.oss-cn-beijing.aliyuncs.com/img/2023_04_20_21_28_30.gif" width="90%" />
-<br>
-演示效果
-</div>
 </details>
 
 ## Datasets
