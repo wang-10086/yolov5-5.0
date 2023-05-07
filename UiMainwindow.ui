@@ -58,7 +58,7 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <property name="styleSheet">
-    <string notr="true"/>
+    <string notr="true">#centralwidget{background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:1, stop:0  #4CA1AF, stop:1 #C4E0E5);}</string>
    </property>
    <widget class="QFrame" name="frame">
     <property name="geometry">
@@ -471,7 +471,7 @@ background-color: rgb(255, 255, 255);</string>
       </font>
      </property>
      <property name="styleSheet">
-      <string notr="true">color: rgb(255, 255, 255);</string>
+      <string notr="true">color: rgb(0,0,0);</string>
      </property>
      <property name="text">
       <string>检测设备：</string>

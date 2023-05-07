@@ -67,12 +67,16 @@ def main(path, img_width, img_height):
         h_plot.append(h)
 
     total_labels_num = len(label_list)
-    print('%d label(s) in datasets' % (total_labels_num))
-    print('nc: %d' % (nc))
+    print('%d label(s) in datasets' % total_labels_num)
+    print('nc: %d' % nc)
+    mean_width = sum(w_plot)/len(w_plot)
+    mean_height = sum(h_plot)/len(h_plot)
+    print('mean width: %d' % mean_width)
+    print('mean height: %d' % mean_height)
 
     # 检测类别数量分布
     plt.figure(1)
-    plt.title('label_classes distribution', fontsize=13)
+    plt.title('label_classes distribution(total labels: %d)' % total_labels_num, fontsize=13)
     plt.bar(classes, num)
     for a, b in zip(classes, num):  # 柱子上的数字显示
         plt.text(a, b, '%d' % b, ha='center', va='bottom', fontsize=8)
