@@ -1147,7 +1147,7 @@ border-color: rgb(0, 0, 0);</string>
      <string notr="true">color: rgb(0, 0, 0);</string>
     </property>
     <property name="text">
-     <string>指示当前车道信号机：</string>
+     <string>指示当前列车信号机：</string>
     </property>
    </widget>
    <widget class="QLabel" name="label_22">

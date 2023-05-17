@@ -518,5 +518,5 @@ class Ui_MainWindow(object):
         self.label_13.setText(_translate("MainWindow", "正在使用："))
         self.label_17.setText(_translate("MainWindow", "message:"))
         self.label_12.setText(_translate("MainWindow", "轨迹变化："))
-        self.label_21.setText(_translate("MainWindow", "指示当前车道信号机："))
+        self.label_21.setText(_translate("MainWindow", "指示当前列车信号机："))
 import resource_rc
