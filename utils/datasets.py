@@ -544,14 +544,14 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         mosaic = self.mosaic and random.random() < hyp['mosaic']
         if mosaic:
             # Load mosaic
-            img, labels = load_mosaic(self, index)
-            # img, labels = load_mosaic9(self, index)
+            # img, labels = load_mosaic(self, index)
+            img, labels = load_mosaic9(self, index)
             shapes = None
 
             # MixUp https://arxiv.org/pdf/1710.09412.pdf
             if random.random() < hyp['mixup']:
-                img2, labels2 = load_mosaic(self, random.randint(0, self.n - 1))
-                # img2, labels2 = load_mosaic9(self, random.randint(0, self.n - 1))
+                # img2, labels2 = load_mosaic(self, random.randint(0, self.n - 1))
+                img2, labels2 = load_mosaic9(self, random.randint(0, self.n - 1))
                 r = np.random.beta(8.0, 8.0)  # mixup ratio, alpha=beta=8.0
                 img = (img * r + img2 * (1 - r)).astype(np.uint8)
                 labels = np.concatenate((labels, labels2), 0)
@@ -580,7 +580,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                                                  perspective=hyp['perspective'])
 
             # Augment colorspace
-            augment_hsv(img, hgain=hyp['hsv_h'], sgain=hyp['hsv_s'], vgain=hyp['hsv_v'])
+            # augment_hsv(img, hgain=hyp['hsv_h'], sgain=hyp['hsv_s'], vgain=hyp['hsv_v'])
 
             # Apply cutouts
             # if random.random() < 0.9:
@@ -592,18 +592,18 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
             labels[:, [2, 4]] /= img.shape[0]  # normalized height 0-1
             labels[:, [1, 3]] /= img.shape[1]  # normalized width 0-1
 
-        if self.augment:
-            # flip up-down
-            if random.random() < hyp['flipud']:
-                img = np.flipud(img)
-                if nL:
-                    labels[:, 2] = 1 - labels[:, 2]
-
-            # flip left-right
-            if random.random() < hyp['fliplr']:
-                img = np.fliplr(img)
-                if nL:
-                    labels[:, 1] = 1 - labels[:, 1]
+        # if self.augment:
+        #     # flip up-down
+        #     if random.random() < hyp['flipud']:
+        #         img = np.flipud(img)
+        #         if nL:
+        #             labels[:, 2] = 1 - labels[:, 2]
+        #
+        #     # flip left-right
+        #     if random.random() < hyp['fliplr']:
+        #         img = np.fliplr(img)
+        #         if nL:
+        #             labels[:, 1] = 1 - labels[:, 1]
 
         labels_out = torch.zeros((nL, 6))
         if nL:
@@ -737,6 +737,8 @@ def load_mosaic(self, index):
     # img4, labels4 = replicate(img4, labels4)  # replicate
 
     # Augment
+    # img4, labels4, segments4 = copy_paste(img4, labels4, segments4, p=self.hyp['copy_paste'])
+    img4, labels4 = copy_paste_extension(img4, labels4, p=self.hyp['copy_paste'])
     img4, labels4 = random_perspective(img4, labels4, segments4,
                                        degrees=self.hyp['degrees'],
                                        translate=self.hyp['translate'],
@@ -811,6 +813,8 @@ def load_mosaic9(self, index):
     # img9, labels9 = replicate(img9, labels9)  # replicate
 
     # Augment
+    # img9, labels9, segments9 = copy_paste(img9, labels9, segments9, p=self.hyp['copy_paste'])
+    img9, labels9 = copy_paste_extension(img9, labels9, p=self.hyp['copy_paste'])
     img9, labels9 = random_perspective(img9, labels9, segments9,
                                        degrees=self.hyp['degrees'],
                                        translate=self.hyp['translate'],
@@ -870,6 +874,44 @@ def letterbox(img, new_shape=(640, 640), color=(114, 114, 114), auto=True, scale
     left, right = int(round(dw - 0.1)), int(round(dw + 0.1))
     img = cv2.copyMakeBorder(img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)  # add border
     return img, ratio, (dw, dh)
+
+
+def copy_paste(im, labels, p=0.5):
+    n = len(labels)
+    if p and n:
+        h, w, c = im.shape  # height, width, channels
+        for j in random.sample(range(n), k=round(p * n)):
+            l = labels[j]
+            box = int(l[1]), int(l[2]), int(l[3]), int(l[4])
+            y1 = random.randint(0, h - box[3] + box[1])
+            x1 = random.randint(0, w - box[2] + box[0])
+            im[y1:y1 + box[3] - box[1], x1:x1 + box[2] - box[0]] = im[box[1]:box[3], box[0]:box[2]]  # img[ymin:ymax, xmin:xmax]
+            l_new = [l[0], x1, y1, x1 + l[3] - l[1], y1 + l[4] - l[2]]
+            labels = np.concatenate((labels, [l_new]), 0)
+
+    return im, labels
+
+
+def copy_paste_extension(im, labels, p=0.5):
+    n = len(labels)
+    edge_size = 20
+    if p and n:
+        h, w, c = im.shape  # height, width, channels
+        for j in random.sample(range(n), k=round(p * n)):
+            l = labels[j]
+            box = int(l[1]), int(l[2]), int(l[3]), int(l[4])
+            if min(box[0], box[1], h - box[3], w - box[2]) > edge_size:
+                edge_size_p = edge_size
+            else:
+                edge_size_p = min(box[0], box[1], h - box[3], w - box[2])
+            y1 = random.randint(edge_size_p, h - box[3] + box[1] - edge_size_p)
+            x1 = random.randint(edge_size_p, w - box[2] + box[0] - edge_size_p)
+            im[y1 - edge_size_p: y1 + box[3] - box[1] + edge_size_p, x1 - edge_size_p: x1 + box[2] - box[0] + edge_size_p] = \
+                im[box[1] - edge_size_p: box[3] + edge_size_p, box[0] - edge_size_p: box[2] + edge_size_p]  # img[ymin:ymax, xmin:xmax]
+            l_new = [l[0], x1, y1, x1 + l[3] - l[1], y1 + l[4] - l[2]]
+            labels = np.concatenate((labels, [l_new]), 0)
+
+    return im, labels
 
 
 def random_perspective(img, targets=(), segments=(), degrees=10, translate=.1, scale=.1, shear=10, perspective=0.0,

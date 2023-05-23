@@ -84,8 +84,8 @@ def main(path, img_width, img_height):
     # 目标中心点位置分布
     plt.figure(2)
     plt.title('Objects center position', fontsize=13)
-    plt.xlabel('x', fontsize=12)
-    plt.ylabel('y', fontsize=12)
+    plt.xlabel('x(px)', fontsize=12)
+    plt.ylabel('y(px)', fontsize=12)
     plt.xlim(0, img_width)
     plt.ylim(0, img_height)
     plt.scatter(x_plot, y_plot, s=4, alpha=0.3)
@@ -93,8 +93,8 @@ def main(path, img_width, img_height):
     # 目标宽高分布
     plt.figure(3)
     plt.title('Objects width and height', fontsize=13)
-    plt.xlabel('width', fontsize=12)
-    plt.ylabel('height', fontsize=12)
+    plt.xlabel('width(px)', fontsize=12)
+    plt.ylabel('height(px)', fontsize=12)
     plt.scatter(w_plot, h_plot, s=6, alpha=0.4)
     plt.show()
 

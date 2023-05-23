@@ -4,13 +4,24 @@
 <img src="http://wang-typora.oss-cn-beijing.aliyuncs.com/img/logo_23_04_25_20_59.png" style="zoom:80%;" />
 </div>
 
-我们很高兴迎来了Yolo for Railway Signal的2.0版本，本项目自2022年7月正式开启以来，已经度过了9个月的时间。从最开始的和利时杯科技创新大赛的比赛项目，到后来成为我个人的本科毕业设计，我们从来都没有停止过对铁路信号机视频检测项目的探索和开发，希望我们的研究能够给您带来帮助。
+🚀我们很高兴迎来了Yolo for Railway Signal的2.0版本，本项目自2022年7月正式开启以来，已经度过了9个月的时间。从最开始的和利时杯科技创新大赛的比赛项目，到后来成为我个人的本科毕业设计，我们从来都没有停止过对铁路信号机视频检测项目的探索和开发，希望我们的研究能够给您带来帮助。
 
 ## Background
 
-本项目是一款基于Yolov5的目标检测算法和Pyqt5的铁路信号机视频识别仿真系统，旨在利用Yolov5目标检测算法对铁路行车过程中的信号机进行自动识别，并将结果以可视化界面的形式传递给用户，从而缓解司机在行车过程中的压力，并提高行车安全性。
+本项目是一款基于Yolov5目标检测算法和Pyqt5的铁路信号机视频识别仿真系统，旨在利用Yolov5目标检测算法对铁路行车过程中的信号机进行自动识别，并将结果以可视化界面的形式传递给用户，从而缓解司机在行车过程中的压力，并提高行车安全性。
 
-首先，为了提高模型对小目标信号机的检测准确度，使用了mosaic9数据增强方法，提出了带边缘扩展的copy-paste数据增强方法，增加了小目标检测层；其次，为了实现对指示当前车道信号机的筛选，在Yolov5检测器的末端应用了deepsort目标跟踪方法，并设计了一种基于连续轨迹变化的筛选分类算法；针对铁路行车场景中的测距问题，设计了基于单目视觉的测距定位模块；最后，基于Pyqt5设计了铁路信号机视频自动识别与仿真系统。
+## Content
+
+本项目的主要工作包含以下三个方面：
+
+1. **改进Yolov5目标检测算法**：为了提高模型对小目标信号机的检测准确度，我们对Yolov5算法提出了三种改进策略，并通过消融实验进行了效果验证，三种策略分别如下:
+   - mosaic9数据增强方法;
+   - 带边缘扩展的copy-paste数据增强方法;
+   - 增加小目标检测层。
+2. **指示本列车运行的信号机的筛选分类模块**：该模块旨在实现对指示本列车运行的信号机的筛选分类，它由目标跟踪器DeepSort和多信号机筛选器MultiSignalFilter组成：
+    - 目标跟踪器DeepSort：在Yolov5检测器的基础上使用DeepSort对信号机目标进行实时跟踪，得到信号机的连续变化轨迹；
+    - 多信号机筛选器MultiSignalFilter：基于信号机的连续变化轨迹对多信号机进行筛选判断。
+3. **铁路信号机视频自动识别与仿真系统**：基于PyQt5设计，具备图片检测、视频检测和实时检测三大功能，提供丰富的人机交互接口，支持实时调整检测参数，动态显示检测结果、单帧检测用时、信号机实时轨迹变化等。
 
 ## Install
 
@@ -43,10 +54,10 @@ python mainwindow.py
 <details>
 <summary>界面介绍</summary>
 
-整个界面包括参数设置模块、功能选择模块、结果显示模块、视频播放模块，后续还会增加目标轨迹实时显示和检测用时实时显示模块。
+整个界面包括参数设置模块、功能选择模块、结果显示模块、视频播放模块，同时还支持目标轨迹实时显示和检测用时实时显示模块。
 
 <div align="center">
-<img src="http://wang-typora.oss-cn-beijing.aliyuncs.com/img/Snipaste_2023-04-20_19-54-23.jpg" style="zoom:50%;" />
+<img src="http://wang-typora.oss-cn-beijing.aliyuncs.com/img/Snipaste_2023-05-23_16-40-50.jpg" style="zoom:40%;" />
 <br>
 界面设计
 </div>
@@ -55,7 +66,7 @@ python mainwindow.py
 <details>
 <summary>功能演示</summary>
 
-演示视频：[铁路信号机视频自动识别与仿真系统演示视频](http://wang-typora.oss-cn-beijing.aliyuncs.com/img/presentation(train)_23_02_20.mp4 )
+演示视频：[铁路信号机视频自动识别与仿真系统演示视频](http://wang-typora.oss-cn-beijing.aliyuncs.com/img/演示视频23_05_23.mp4 )
 
 </details>
 
@@ -76,10 +87,10 @@ python mainwindow.py
 
 |       model        |    datasets     | size | mAP<sup>optimal<br>50-95 |
 |:------------------:|:---------------:|:----:|:------------------------:|
-|     coco128.pt     |     coco128     | 640  |                          |
-|   road_signal.pt   |   road_signal   | 640  |                          |
-|  train_signal.pt   |  train_signal   | 640  |                          |
-| train_signal500.pt | train_signal500 | 640  |                          |
+|     coco128.pt     |     coco128     | 640  |          0.7996          |
+|   road_signal.pt   |   road_signal   | 640  |          0.7516          |
+|  train_signal.pt   |  train_signal   | 640  |          0.7805          |
+| train_signal500.pt | train_signal500 | 640  |          0.8204          |
 
 ## Deepsort
 
@@ -91,7 +102,7 @@ python mainwindow.py
 deepsort跟踪效果
 </div>
 
-本项目使用了mikel.brostrom的[Yolov5 + Deep Sort with PyTorch](https://github.com/mikel-brostrom/yolov8_tracking/tree/v1.0 )，在此表示感谢。
+本项目使用mikel.brostrom的[Yolov5 + Deep Sort with PyTorch](https://github.com/mikel-brostrom/yolov8_tracking/tree/v1.0 )。
 
 ## Maintainers
 @[Akkkk](https://github.com/wang-10086)

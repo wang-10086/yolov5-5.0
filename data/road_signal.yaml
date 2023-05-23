@@ -1,0 +1,8 @@
+# Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
+train: ../autodl-tmp/signal/images/  # train images (relative to 'path')
+val: ../autodl-tmp/signal/images/  # val images (relative to 'path')
+
+# Classes
+nc: 14  # number of classes
+names: [ 'gcircle', 'rleft', 'rcircle', 'gleft', 'gperson', 'rup', 'gright',
+         'rperson', 'yleft', 'gup', 'rright', 'ycircle', 'yright', 'yup' ]  # class names

@@ -1,0 +1,16 @@
+# COCO 2017 dataset http://cocodataset.org - first 128 training images
+# Train command: python train.py --data coco128.yaml
+# Default dataset location is next to /yolov5:
+#   /parent_folder
+#     /coco128
+#     /yolov5
+
+# train and val data as 1) directory: path/images/, 2) file: path/images.txt, or 3) list: [path1/images/, path2/images/]
+train: ../train_signal500/images/
+val: ../train_signal500/images/
+
+# number of classes
+nc: 6
+
+# class names
+names: [ 'red', 'green', 's_yellow', 'd_yellow', 'white', 'blue' ]
