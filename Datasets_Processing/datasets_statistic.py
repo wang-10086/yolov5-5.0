@@ -1,6 +1,6 @@
-'''
+"""
 本程序用于对标注数据集的标签文件进行统计,绘制yolo格式标签的中心位置分布和宽高分布情况
-'''
+"""
 
 import matplotlib.pyplot as plt
 import os
@@ -18,11 +18,11 @@ def get_classes(file_path):
 
 
 def main(path, img_width, img_height):
-    '''
+    """
     path: 标签文件夹路径
     img_width: 图片宽度
     img_height: 图片高度
-    '''
+    """
 
     # 数据读取
     label_list = []
@@ -51,6 +51,7 @@ def main(path, img_width, img_height):
     x_plot, y_plot, w_plot, h_plot = [], [], [], []
     num = [0] * nc
 
+    small_label = 0
     for label in label_list:
         # 统计各标签数量
         current_class = int(label[0])
@@ -66,13 +67,18 @@ def main(path, img_width, img_height):
         w_plot.append(w)
         h_plot.append(h)
 
+        if w * h / (img_width * img_height) < 0.0012:
+            small_label = small_label + 1
+
     total_labels_num = len(label_list)
     print('%d label(s) in datasets' % total_labels_num)
     print('nc: %d' % nc)
     mean_width = sum(w_plot)/len(w_plot)
     mean_height = sum(h_plot)/len(h_plot)
+    small_ratio = small_label/total_labels_num
     print('mean width: %d' % mean_width)
     print('mean height: %d' % mean_height)
+    print('small object ratio: %f' % small_ratio)
 
     # 检测类别数量分布
     plt.figure(1)
@@ -92,7 +98,7 @@ def main(path, img_width, img_height):
 
     # 目标宽高分布
     plt.figure(3)
-    plt.title('Objects width and height', fontsize=13)
+    plt.title('Objects width and height(small object ratio: %f)' % small_ratio, fontsize=13)
     plt.xlabel('width(px)', fontsize=12)
     plt.ylabel('height(px)', fontsize=12)
     plt.scatter(w_plot, h_plot, s=6, alpha=0.4)
