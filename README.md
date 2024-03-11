@@ -111,7 +111,7 @@ deepsort跟踪效果
 ## Contact us
 非常欢迎您使用我们的项目进行测试，如果您在使用过程中遇到任何问题，可以通过以下方式联系我们：
 
-[kunw13520935425@163.com](kunw13520935425@163.com)
+[Alcattiau@outlook.com](Alcattiau@outlook.com)
 
 
 
